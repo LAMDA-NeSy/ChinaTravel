@@ -11,7 +11,8 @@ from poi.apis import Poi
 
 
 class Restaurants:
-    def __init__(self, base_path: str = "../../database/restaurants"):
+    def __init__(self, base_path: str = "../../database/restaurants", en_version=False):
+        file_suffix = "_en" if en_version else ""
         city_list = [
             "beijing",
             "shanghai",
@@ -27,7 +28,7 @@ class Restaurants:
         self.data = {}
         curdir = os.path.dirname(os.path.realpath(__file__))
         for city in city_list:
-            path = os.path.join(curdir, base_path, city, "restaurants_" + city + ".csv")
+            path = os.path.join(curdir, base_path, city, f"restaurants_{city}{file_suffix}.csv")
             self.data[city] = pd.read_csv(path)
 
         self.key_type_tuple_list_map = {}
@@ -54,13 +55,11 @@ class Restaurants:
         ]
 
         for i, city in enumerate(city_list):
-            self.data[city_cn_list[i]] = self.data.pop(city)
-            self.key_type_tuple_list_map[city_cn_list[i]] = (
-                self.key_type_tuple_list_map.pop(city)
-            )
-            self.cuisine_list_map[city_cn_list[i]] = self.cuisine_list_map.pop(city)
+            self.data[city_cn_list[i]] = self.data[city]
+            self.key_type_tuple_list_map[city_cn_list[i]] = self.key_type_tuple_list_map[city]
+            self.cuisine_list_map[city_cn_list[i]] = self.cuisine_list_map[city]
 
-        self.poi = Poi()
+        self.poi = Poi(en_version=en_version)
 
     def keys(self, city: str):
         return self.key_type_tuple_list_map[city]
@@ -77,12 +76,12 @@ class Restaurants:
         end_time = match["endtime"].values[0]
         open_time = (
             -1
-            if open_time == "不营业"
+            if open_time in ["不营业", "closed"]
             else float(open_time.split(":")[0]) + float(open_time.split(":")[1]) / 60
         )
         end_time = (
             -1
-            if end_time == "不营业"
+            if end_time in ["不营业", "closed"]
             else float(end_time.split(":")[0]) + float(end_time.split(":")[1]) / 60
         )
         time = float(time.split(":")[0]) + float(time.split(":")[1]) / 60

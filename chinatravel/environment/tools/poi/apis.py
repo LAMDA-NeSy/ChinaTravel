@@ -4,6 +4,8 @@ import json
 
 class Poi:
     def __init__(self, base_path: str = "../../database/poi/", en_version=False):
+        self.en_version = en_version
+        file_suffix = "_en" if en_version else ""
 
         city_list = [
             "beijing",
@@ -19,7 +21,7 @@ class Poi:
         ]
         curdir = os.path.dirname(os.path.realpath(__file__))
         data_path_list = [
-            os.path.join(curdir, f"{base_path}/{city}/poi.json") for city in city_list
+            os.path.join(curdir, f"{base_path}/{city}/poi{file_suffix}.json") for city in city_list
         ]
         self.data = {}
         for i, city in enumerate(city_list):
@@ -46,7 +48,7 @@ class Poi:
             "重庆",
         ]
         for i, city in enumerate(city_list):
-            self.data[city_cn_list[i]] = self.data.pop(city)
+            self.data[city_cn_list[i]] = self.data[city]
         self.city_cn_list = city_cn_list
         self.city_list = city_list
 
@@ -57,7 +59,9 @@ class Poi:
         try:
             return city_data[name]
         except KeyError:
-            return f"No such point in the city. Check the point name: {name}."
+            if self.en_version:
+                return f"No such point in the city. Check the point name: {name}."
+            return f"城市中没有该地点，请检查地点名称: {name}."
 
 
 def test():

@@ -24,6 +24,27 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
+def _get_language(args):
+    return getattr(args, "lang", "zh")
+
+
+def _normalize_query_language(data_i, lang):
+    if lang == "zh":
+        return data_i
+
+    key_pairs = [
+        ("nature_language", "nature_language_en"),
+        ("hard_logic", "hard_logic_en"),
+        ("hard_logic_py", "hard_logic_py_en"),
+        ("hard_logic_nl", "hard_logic_nl_en"),
+        ("preference", "preference_en"),
+    ]
+    for base_key, lang_key in key_pairs:
+        if lang_key in data_i:
+            data_i[base_key] = data_i[lang_key]
+    return data_i
+
+
 def load_query_local(args, version="", verbose=False):
     query_data = {}
 
@@ -62,6 +83,8 @@ def load_query_local(args, version="", verbose=False):
                     data_i = json.load(
                         open(os.path.join(dir_ii, file_i), encoding="utf-8")
                     )
+
+                    data_i = _normalize_query_language(data_i, _get_language(args))
 
                     if hasattr(args, 'oracle_translation') and not args.oracle_translation:
                         if "hard_logic" in data_i:
@@ -111,7 +134,8 @@ def load_query(args):
     
 
     for data_i in query_data:
-        if "hard_logic_py" in data_i:
+        data_i = _normalize_query_language(data_i, _get_language(args))
+        if "hard_logic_py" in data_i and isinstance(data_i["hard_logic_py"], str):
             data_i["hard_logic_py"] = ast.literal_eval(data_i["hard_logic_py"])
     
     query_id_list = [data_i["uid"] for data_i in query_data]

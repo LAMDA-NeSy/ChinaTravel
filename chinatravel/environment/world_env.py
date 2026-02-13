@@ -103,12 +103,12 @@ class WorldEnv:
             "武汉",
             "南京",
         ]
-        self.attractions = Attractions()
-        self.accommodations = Accommodations()
-        self.restaurants = Restaurants()
-        self.intercitytransport = IntercityTransport()
-        self.transportation = Transportation()
-        self.poi = Poi()
+        self.attractions = Attractions(en_version=en_version)
+        self.accommodations = Accommodations(en_version=en_version)
+        self.restaurants = Restaurants(en_version=en_version)
+        self.intercitytransport = IntercityTransport(en_version=en_version)
+        self.transportation = Transportation(en_version=en_version)
+        self.poi = Poi(en_version=en_version)
 
         self.results = []
 

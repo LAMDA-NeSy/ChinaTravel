@@ -16,6 +16,7 @@ class Attractions:
         base_path: str = "../../database/attractions",
         en_version=False,
     ):
+        file_suffix = "_en" if en_version else ""
         city_list = [
             "beijing",
             "shanghai",
@@ -30,7 +31,7 @@ class Attractions:
         ]
         curdir = os.path.dirname(os.path.realpath(__file__))
         data_path_list = [
-            os.path.join(curdir, f"{base_path}/{city}/attractions.csv")
+            os.path.join(curdir, f"{base_path}/{city}/attractions{file_suffix}.csv")
             for city in city_list
         ]
 
@@ -61,13 +62,11 @@ class Attractions:
         ]
 
         for i, city in enumerate(city_list):
-            self.data[city_cn_list[i]] = self.data.pop(city)
-            self.key_type_tuple_list_map[city_cn_list[i]] = (
-                self.key_type_tuple_list_map.pop(city)
-            )
-            self.type_list_map[city_cn_list[i]] = self.type_list_map.pop(city)
+            self.data[city_cn_list[i]] = self.data[city]
+            self.key_type_tuple_list_map[city_cn_list[i]] = self.key_type_tuple_list_map[city]
+            self.type_list_map[city_cn_list[i]] = self.type_list_map[city]
 
-        self.poi = Poi()
+        self.poi = Poi(en_version=en_version)
 
     def keys(self, city: str):
         return self.key_type_tuple_list_map[city]
