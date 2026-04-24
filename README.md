@@ -254,13 +254,12 @@ If you have any problems, please contact [Jie-Jing Shao](shaojj@lamda.nju.edu.cn
 If our paper or related resources prove valuable to your research, we kindly ask for citation.
 
 ```
-@misc{shao2024chinatravelrealworldbenchmarklanguage,
-      title={ChinaTravel: A Real-World Benchmark for Language Agents in Chinese Travel Planning}, 
-      author={Jie-Jing Shao and Xiao-Wen Yang and Bo-Wen Zhang and Baizhi Chen and Wen-Da Wei and Guohao Cai and Zhenhua Dong and Lan-Zhe Guo and Yu-feng Li},
-      year={2024},
-      eprint={2412.13682},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2412.13682}, 
+@inproceedings{
+shao2026chinatravel,
+title={ChinaTravel: An Open-Ended Travel Planning Benchmark with Compositional Constraint Validation for Language Agents},
+author={Jie-Jing Shao and Bo-Wen Zhang and Xiao-Wen Yang and Baizhi Chen and Siyu Han and Pang Jinghao and Wen-Da Wei and Guohao Cai and Zhenhua Dong and Lan-Zhe Guo and Yu-Feng Li},
+booktitle={The Fourteenth International Conference on Learning Representations},
+year={2026},
+url={https://openreview.net/forum?id=0YRVlxY9BH}
 }
 ```
