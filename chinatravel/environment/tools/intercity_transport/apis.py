@@ -9,10 +9,11 @@ def time2float(time_str):
 
 
 class IntercityTransport:
-    def __init__(self, path: str = "../../database/intercity_transport/"):
+    def __init__(self, path: str = "../../database/intercity_transport/", en_version=False):
+        file_suffix = "_en" if en_version else ""
         curdir = os.path.dirname(os.path.realpath(__file__))
         self.base_path = os.path.join(curdir, path)
-        self.airplane_path = self.base_path + "airplane.jsonl"
+        self.airplane_path = self.base_path + f"airplane{file_suffix}.jsonl"
         self.airplane_df = pd.read_json(
             self.airplane_path, lines=True, keep_default_dates=False
         )
@@ -28,6 +29,14 @@ class IntercityTransport:
             "武汉",
             "南京",
         ]
+        self.city_list = city_list
+        self.city_en_list = [
+            "shanghai", "beijing", "shenzhen", "guangzhou", "chongqing",
+            "suzhou", "chengdu", "hangzhou", "wuhan", "nanjing",
+        ]
+        self.city_cn_to_en = dict(zip(self.city_list, self.city_en_list))
+        self.city_en_to_cn = dict(zip(self.city_en_list, self.city_list))
+
         self.train_df_dict = {}
 
         for start_city in city_list:
@@ -37,7 +46,7 @@ class IntercityTransport:
                 train_path = (
                     self.base_path
                     + "train/"
-                    + "from_{}_to_{}.json".format(start_city, end_city)
+                    + f"from_{start_city}_to_{end_city}{file_suffix}.json"
                 )
                 train_df = pd.read_json(train_path)
                 self.train_df_dict[(start_city, end_city)] = train_df
@@ -45,6 +54,10 @@ class IntercityTransport:
     def select(
         self, start_city, end_city, intercity_type, earliest_leave_time="00:00"
     ) -> DataFrame:
+        if start_city in self.city_en_to_cn:
+            start_city = self.city_en_to_cn[start_city]
+        if end_city in self.city_en_to_cn:
+            end_city = self.city_en_to_cn[end_city]
         if intercity_type not in ["train", "airplane"]:
             return "only support intercity_type in ['train','airplane']"
         res = self._select(start_city, end_city, intercity_type)

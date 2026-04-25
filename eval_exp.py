@@ -74,6 +74,7 @@ def load_result(args, query_index, verbose=False):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--lang", type=str, default="zh", choices=["zh", "en"], help="query language")
     parser.add_argument("--splits", "-s", type=str, default="example")
     parser.add_argument(
         "--method", "-m", type=str, default="example"

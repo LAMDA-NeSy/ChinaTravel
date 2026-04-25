@@ -15,6 +15,7 @@ class Accommodations:
     def __init__(
         self, base_path: str = "../../database/accommodations/", en_version=False
     ):
+        file_suffix = "_en" if en_version else ""
         curdir = os.path.dirname(os.path.realpath(__file__))
         city_list = [
             "beijing",
@@ -29,7 +30,7 @@ class Accommodations:
             "chongqing",
         ]
         data_path_list = [
-            os.path.join(curdir, f"{base_path}/{city}/accommodations.csv")
+            os.path.join(curdir, f"{base_path}/{city}/accommodations{file_suffix}.csv")
             for city in city_list
         ]
         self.data = {}
@@ -56,10 +57,8 @@ class Accommodations:
         ]
 
         for i, city in enumerate(city_list):
-            self.data[city_cn_list[i]] = self.data.pop(city)
-            self.key_type_tuple_list[city_cn_list[i]] = self.key_type_tuple_list.pop(
-                city
-            )
+            self.data[city_cn_list[i]] = self.data[city]
+            self.key_type_tuple_list[city_cn_list[i]] = self.key_type_tuple_list[city]
 
         self.poi = Poi(en_version=en_version)
 

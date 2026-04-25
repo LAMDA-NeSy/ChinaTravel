@@ -20,6 +20,7 @@ from chinatravel.environment.world_env import WorldEnv
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="argparse testing")
+    parser.add_argument("--lang", type=str, default="zh", choices=["zh", "en"], help="dataset/environment language")
     parser.add_argument(
         "--splits",
         "-s",
@@ -97,7 +98,7 @@ if __name__ == "__main__":
         max_model_len = None
     kwargs = {
         "method": args.agent,
-        "env": WorldEnv(),
+        "env": WorldEnv(en_version=args.lang == "en"),
         "backbone_llm": init_llm(args.llm, max_model_len=max_model_len),
         "cache_dir": cache_dir,
         "log_dir": log_dir, 
@@ -134,7 +135,7 @@ if __name__ == "__main__":
         query_i = query_data[data_idx]
         print(query_i)
         if args.agent in ["ReAct", "ReAct0", "Act"]:
-            plan_log = agent(query_i["nature_language"])
+            plan_log = agent(query_i.get("nature_language", query_i.get("nature_language_en", "")))
             plan = plan_log["ans"]
             if isinstance(plan, str):
                 try:

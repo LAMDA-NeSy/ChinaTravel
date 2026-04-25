@@ -139,6 +139,7 @@ class Transportation:
     def __init__(
         self, base_path: str = "../../database/transportation/", en_version=False
     ):
+        file_suffix = "_en" if en_version else ""
         self.city_list = [
             "shanghai",
             "beijing",
@@ -165,7 +166,7 @@ class Transportation:
         ]
 
         curdir = os.path.dirname(os.path.realpath(__file__))
-        SUBWAY_PATH = os.path.join(curdir, base_path + "subways.json")
+        SUBWAY_PATH = os.path.join(curdir, base_path + f"subways{file_suffix}.json")
         self.city_stations_dict = {}
         self.city_lines_dict = {}
         self.city_station_to_line = {}
@@ -181,7 +182,7 @@ class Transportation:
         for city in self.city_list:
             self.graphs[city] = build_graph(self.city_lines_dict[city])
 
-        self.poi_search = Poi()
+        self.poi_search = Poi(en_version=en_version)
 
     def goto(self, city, start, end, start_time, transport_type, verbose=False):
         if transport_type not in ["walk", "metro", "taxi"]:
@@ -286,7 +287,7 @@ class Transportation:
                 transports.append(
                     {
                         "start": locationA_name,
-                        "end": stationA["name"] + "-地铁站",
+                        "end": stationA["name"] + ("-metro station" if self.poi_search.en_version else "-地铁站"),
                         "mode": "walk",
                         "start_time": start_time,
                         "end_time": end_timeA,
@@ -296,8 +297,8 @@ class Transportation:
                 )
                 transports.append(
                     {
-                        "start": stationA["name"] + "-地铁站",
-                        "end": stationB["name"] + "-地铁站",
+                        "start": stationA["name"] + ("-metro station" if self.poi_search.en_version else "-地铁站"),
+                        "end": stationB["name"] + ("-metro station" if self.poi_search.en_version else "-地铁站"),
                         "mode": "metro",
                         "start_time": end_timeA,
                         "end_time": end_timeB,
@@ -307,7 +308,7 @@ class Transportation:
                 )
                 transports.append(
                     {
-                        "start": stationB["name"] + "-地铁站",
+                        "start": stationB["name"] + ("-metro station" if self.poi_search.en_version else "-地铁站"),
                         "end": locationB_name,
                         "mode": "walk",
                         "start_time": end_timeB,
