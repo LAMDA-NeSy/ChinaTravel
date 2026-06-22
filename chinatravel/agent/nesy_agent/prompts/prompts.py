@@ -447,16 +447,11 @@ class NL2SL_INSTRUCTION_V2:
 
 if __name__ == "__main__":
     import os
-    import sys
-
-    root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-    sys.path.append(root_path)
-    sys.path.append(os.path.abspath(os.path.join(root_path, "..")))
 
     from chinatravel.agent.nesy_agent.prompts import NL2SL_INSTRUCTION_V2
-    from chinatravel.agent.llms import Deepseek
+    from chinatravel.agent.llms import create_llm
 
-    llm = Deepseek()
+    llm = create_llm(None)
 
     # nature_language = """当前位置广州。我和朋友两个人想去深圳玩3天，想吃八合里牛肉火锅(东园店)，请给我们一个旅行规划。"""
     # nature_language = """当前位置苏州。我两个人想去杭州玩2天，预算4000人民币，住一间大床房，期间打车，酒店最好有窗外好景，想去雷峰塔看一下，请给我一个旅行规划。"""
@@ -468,8 +463,3 @@ if __name__ == "__main__":
     #     one_line=False,
     # )
     # print(res)
-    # res_dict = eval(res)
-    # for res_str in res_dict["hard_logic_py"]:
-    #     print("-------------------")
-    #     print(res_str)
-    # print("-------------------")

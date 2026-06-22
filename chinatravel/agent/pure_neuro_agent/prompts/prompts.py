@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from .examples import *
+from .examples import EXAMPLE, GLM4_EXAMPLE
 
 import os
 

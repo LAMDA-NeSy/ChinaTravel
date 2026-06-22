@@ -1,18 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 
 project_root_path = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-if os.path.join(project_root_path, "chinatravel") not in sys.path:
-    sys.path.insert(0, os.path.join(project_root_path, "chinatravel"))
-# print(project_root_path)
 import json
-from tqdm import tqdm
-from chinatravel.agent.llms import Deepseek
 from chinatravel.data.load_datasets import save_json_file, load_json_file
 from chinatravel.agent.nesy_agent.prompts import NL2SL_INSTRUCTION_V2
 
@@ -340,6 +332,8 @@ def _nl2sl_v2(query, backbone_llm):
 
 if __name__ == "__main__":
     import argparse
+    from tqdm import tqdm
+    from chinatravel.agent.llms import create_llm
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", "-d", type=str, default="easy")
@@ -348,7 +342,7 @@ if __name__ == "__main__":
     data_dir = os.path.join(
         project_root_path, "chinatravel/data/{}".format(args.data_dir)
     )
-    deepseek = Deepseek()
+    llm = create_llm(None)
     # data_dir = os.path.join(project_root_path, "chinatravel/data/generated_easy")
     file_list = os.listdir(data_dir)
     # query = {
@@ -362,7 +356,7 @@ if __name__ == "__main__":
             continue
         file_path = os.path.join(data_dir, file_name)
         query = load_json_file(file_path)
-        res = _nl2sl_v2(query, deepseek)
+        res = _nl2sl_v2(query, llm)
         # cnt -= 1
         # print(res)
         # break

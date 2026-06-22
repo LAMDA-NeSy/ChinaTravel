@@ -65,7 +65,7 @@ Participants are invited to develop novel agents that can tackle real-world trav
    Based on methodology from:
    Paper: Robust Planning with Compound LLM Architectures: An LLM-Modulo Approach
    Codebase: https://github.com/Atharva-Gundawar/LLM-Modulo-prompts
-4. Support local LLMs inference with Qwen3-8B/4B.
+4. Support configurable LLM inference.
 
 ## 🚀 Quick Start
 
@@ -74,7 +74,7 @@ Participants are invited to develop novel agents that can tackle real-world trav
 1. Create a conda environment and install dependencies:
 
 ```bash
-conda create -n chinatravel python=3.9  
+conda create -n chinatravel python=3.12
 conda activate chinatravel  
 pip install -r requirements.txt  
 ```
@@ -83,47 +83,53 @@ pip install -r requirements.txt
 
 Download Links: [Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU), [NJU Drive](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/)
 
-3. Download the open-source LLMs (optional).
+3. Configure an OpenAI-compatible model endpoint.
+
+ChinaTravel no longer requires local model weights or tokenizer downloads. Set
+the API key and optional base URL for the endpoint you want to use:
 
 ```bash
-bash download_llm.sh
-```
-
-4. Download the tokenizers.
-
-```bash
-wget https://cdn.deepseek.com/api-docs/deepseek_v3_tokenizer.zip -P chinatravel/local_llm/
-unzip chinatravel/local_llm/deepseek_v3_tokenizer.zip -d chinatravel/local_llm/
+export OPENAI_API_KEY=""
+# Optional for OpenAI-compatible providers:
+export OPENAI_BASE_URL="https://your-provider.example/v1"
+# Optional: chat for OpenAI-compatible Chat Completions endpoints,
+# or responses for the OpenAI Responses API.
+export CHINATRAVEL_OPENAI_WIRE_API="chat"
+# Optional when a provider uses a different token limit field:
+export CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG="max_tokens"
+# Optional while debugging provider integration:
+export CHINATRAVEL_OPENAI_RAISE_ERRORS=1
+# Optional when exporting strict OpenAI tool schemas from agent_env:
+export CHINATRAVEL_OPENAI_STRICT_TOOLS=1
 ```
 
 ### ▶️ Running
 
-We support the deepseek (offical API from deepseek), gpt-4o (chatgpt-4o-latest), glm4-plus, and local inferences with Qwen (Qwen3-8B), llama, mistral (Mistral-7B-Instruct-v0.3), etc.
+The `--llm` value can be a built-in alias (`deepseek`, `gpt-4o`, `glm4-plus`) or
+any model name served by an OpenAI-compatible endpoint. Alias and
+provider-prefix matching is case-insensitive; the actual model id is preserved.
 
 ```bash
 export OPENAI_API_KEY=""
 
-python run_exp.py --splits easy --agent LLMNeSy --llm deepseek --oracle_translation
-python run_exp.py --splits medium --agent LLMNeSy --llm deepseek --oracle_translation
-python run_exp.py --splits human --agent LLMNeSy --llm deepseek --oracle_translation
+python run_exp.py --splits easy --agent LLMNeSy --llm provider/model-name --oracle_translation
+python run_exp.py --splits medium --agent LLMNeSy --llm provider/model-name --oracle_translation
+python run_exp.py --splits human --agent LLMNeSy --llm provider/model-name --oracle_translation
 
-python run_exp.py --splits human --agent LLMNeSy --llm Qwen3-8B --oracle_translation
+python run_exp.py --splits human --agent LLMNeSy --llm provider/model-name
 
-
-python run_exp.py --splits human --agent LLMNeSy --llm deepseek 
-python run_exp.py --splits human --agent LLMNeSy --llm Qwen3-8B 
-
-
-python run_exp.py --splits human --agent LLM-modulo --llm deepseek --refine_steps 10 --oracle_translation
-python run_exp.py --splits human --agent LLM-modulo --llm Qwen3-8B --refine_steps 10 --oracle_translation
+python run_exp.py --splits human --agent LLM-modulo --llm provider/model-name --refine_steps 10 --oracle_translation
 ```
 
 **Note**:
 
+- Query records are expected to use the fixed data format. In particular,
+  `hard_logic_py` must already be a list when present; the loader validates the
+  shape and does not patch older string-encoded annotations.
 - The `--oracle_translation` flag enables access to annotated ground truth including:
 
   - `hard_logic_py`: Executable verification DSL code
-  - `hard_logic_nl`: The corrsponding constraint descriptions
+  - `hard_logic_nl`: The corresponding constraint descriptions
   - Example annotation structure:
 
   ```python
@@ -152,10 +158,10 @@ python run_exp.py --splits human --agent LLM-modulo --llm Qwen3-8B --refine_step
 ### 📊 Evaluation
 
 ```bash
-python eval_exp.py --splits human --method LLMNeSy_deepseek_oracletranslation
-python eval_exp.py --splits human --method LLMNeSy_deepseek
-python eval_exp.py --splits human --method LLM-modulo_deepseek_10steps_oracletranslation
-python eval_exp.py --splits human --method LLM-modulo_Qwen3-8B_10steps_oracletranslation
+python eval_exp.py --splits human --method all --llm provider/model-name
+python eval_exp.py --splits human --method LLMNeSy_provider_model-name_oracletranslation
+python eval_exp.py --splits human --method LLMNeSy_provider_model-name
+python eval_exp.py --splits human --method LLM-modulo_provider_model-name_10steps_oracletranslation
 
 ```
 
@@ -169,12 +175,16 @@ python eval_tpc.py --splits tpc_phase1 --method YOUR_METHOD_NAME
 
 [Environment](chinatravel/environment/readme.md)
 [Constraints](chinatravel/symbol_verification/readme.md)
+[Agent Environment](agent_env/README.md)
 
 ## 🛠️ Advanced Development
 
 ### 1. Develop Your Own Agent Algorithm
 
-To develop your own agent algorithm, you need to inherit the `BaseAgent` class from `chinatravel/agent/base.py` and add the logic for your algorithm to the `init_agent` function in `chinatravel/agent/load_model.py`. We provide an empty agent example named `TPCAgent`.
+To develop your own agent algorithm, inherit the `BaseAgent` class from
+`chinatravel/agent/base.py` and register a lazy builder in
+`chinatravel/agent/load_model.py`. We provide an empty agent example named
+`TPCAgent`.
 
 Steps:
 
@@ -193,55 +203,46 @@ class YourAgent(BaseAgent):
         pass
 ```
 
-- **Add code to the init_agent function**: Open the chinatravel/agent/load_model.py file and add support for your new agent in the init_agent function.
+- **Register an agent builder**: Open `chinatravel/agent/load_model.py`, add a
+  small builder function, and register it in `AGENT_BUILDERS`.
 
 ```python:
-def init_agent(kwargs):
-    # ... existing code ...
-    elif kwargs["method"] == "YourMethodName":
-        agent = YourAgent(
-            **kwargs
-        )
-    # ... existing code ...
-    return agent
+def _build_your_agent(kwargs):
+    from .your_agent import YourAgent
+
+    return YourAgent(**kwargs)
+
+
+AGENT_BUILDERS = {
+    # ... existing builders ...
+    "YourMethodName": _build_your_agent,
+}
 ```
 
-### 2. Develop Your Own Local LLM
+### 2. Use Your Own Model
 
-To develop your own local large - language model (LLM), you need to inherit the AbstractLLM class from chinatravel/agent/llms.py and add the corresponding local LLM inference code in llms.py. We provide an empty LLM example named TPCLLM.
-Steps:
+To use your own model, expose it through an OpenAI-compatible Chat Completions
+endpoint or the OpenAI Responses API. You do not need to add a new Python class
+or edit `init_llm`.
 
-- **Inherit the AbstractLLM class**:  Define your own LLM class in the chinatravel/agent/llms.py file, inheriting from AbstractLLM.
-
-```python
-class YourLLM(AbstractLLM):
-    def __init__(self):
-        super().__init__()
-        # Initialization logic
-        self.name = "YourLLMName"
-
-    def _get_response(self, messages, one_line, json_mode):
-        # Implement the response logic of the LLM
-        response = "Your LLM response"
-        if json_mode:
-            # Handle JSON mode
-            pass
-        elif one_line:
-            # Handle one - line mode
-            response = response.split("\n")[0]
-        return response
+```bash
+export OPENAI_API_KEY=""
+export OPENAI_BASE_URL="https://your-provider.example/v1"
+export CHINATRAVEL_OPENAI_WIRE_API="chat"
+export CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG="max_tokens"
+export CHINATRAVEL_OPENAI_RAISE_ERRORS=1
+python run_exp.py --splits easy --agent LLMNeSy --llm your-model-name
 ```
 
-- **Add code to the init_agent function**: Open the chinatravel/agent/load_model.py file and add support for your new llm in the init_llm function.
+For the OpenAI Responses API, set `CHINATRAVEL_OPENAI_WIRE_API=responses`.
+The default token limit argument then becomes `max_output_tokens`; override
+`CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG` only if your provider expects another field.
+Responses mode requires `openai>=1.66.0`; Chat Completions mode remains the
+default for broad OpenAI-compatible provider support.
 
-```python:
-def init_llm(kwargs):
-    # ... existing code ...
-    elif llm_name == "glm4-plus":
-        llm = YourLLM()
-    # ... existing code ...
-    return llm
-```
+Provider/model prefixes are also accepted when the provider alias is known, for
+example `deepseek/deepseek-chat`. Built-in aliases are defined in
+`chinatravel/agent/llms.py`.
 
 ### 3. Run Your Code Using Experiment Scripts
 
@@ -250,11 +251,11 @@ After completing the above development, you can use the experiment scripts to ru
 Example of running:
 
 ```bash
-python run_tpc.py --splits easy --agent TPCAgent --llm TPCLLM
-python run_exp.py --splits easy --agent YourMethodName --llm YourLLMName
+python run_tpc.py --splits easy --agent TPCAgent --llm rule
+python run_exp.py --splits easy --agent YourMethodName --llm your-model-name
 ```
 
-The results will be saved in the `results/YourMethodName_YourLLMName_xxx` directory, e.g., `results/TPCAgent_TPCLLM`.
+The results will be saved in the `results/YourMethodName_YourLLMName_xxx` directory, e.g., `results/TPCAgent_rule`.
 
 ## ✉️ Contact
 

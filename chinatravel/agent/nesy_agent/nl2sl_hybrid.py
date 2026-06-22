@@ -1,18 +1,15 @@
 import os
-import sys
-from json_repair import repair_json
+from chinatravel.json_utils import repair_json
 
 project_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir)
 )
-if project_path not in sys.path:
-    sys.path.append(project_path)
 
 import json
-from tqdm import tqdm
 from copy import deepcopy
-from chinatravel.agent.llms import Deepseek, GPT4o, Qwen, Mistral, GLM4Plus
+from chinatravel.agent.llms import create_llm
 from chinatravel.symbol_verification.concept_func import func_dict
+from chinatravel.symbol_verification.dsl import execute_dsl_code
 from chinatravel.agent.nesy_agent.prompts import NL2SL_INSTRUCTION
 from chinatravel.agent.nesy_agent.ast_checker import HardLogicPyChecker
 from chinatravel.data.load_datasets import save_json_file, load_json_file
@@ -329,16 +326,7 @@ def check(query):
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = example_plan
         try:
-            # Evaluate the constraint in a safe manner
-            exec(
-                constraint,
-                {
-                    "__builtins__": {
-                        "set": set,
-                    }
-                },
-                vars_dict,
-            )
+            execute_dsl_code(constraint, vars_dict, allowed_builtins={"set": set})
         except Exception as e:
             if str(e) not in [
                 "Failed to create Point instance from string: unknown format.",
@@ -500,6 +488,8 @@ def nl2sl_reflect(query, backbone_llm, lang="zh"):
 
 
 def run(splits: str = "easy_day1", backbone_llm=None, need_check=False):
+    from tqdm import tqdm
+
     cache_root = "cache_reflect_v1"
     splits_file = os.path.join(
         project_path, "chinatravel/evaluation/default_splits/{}.txt".format(splits)
@@ -569,6 +559,6 @@ if __name__ == "__main__":
     # splits_list = ["easy_1209", "multi_cons"]
     # splits_list = ["cost", "food", "attraction", "hotel", "transport"]
     # splits_list = ["attraction"]
-    llm = Qwen()
+    llm = create_llm(None)
     for splits in splits_list:
         run(splits=splits, backbone_llm=llm)

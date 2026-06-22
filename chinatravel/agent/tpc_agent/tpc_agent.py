@@ -1,21 +1,5 @@
-import sys
-import os
 import time
-import argparse
-import pandas as pd
-import json
-import numpy as np
-
-sys.path.append("./../../../")
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-
-
-from agent.base import AbstractAgent, BaseAgent
+from chinatravel.agent.base import BaseAgent
 
 class TPCAgent(BaseAgent):
     def __init__(self, **kwargs):

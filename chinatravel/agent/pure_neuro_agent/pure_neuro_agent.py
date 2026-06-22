@@ -1,16 +1,7 @@
-import os
-import sys
+import ast
 
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-if project_root_path not in sys.path:
-    sys.path.append(project_root_path)
-if os.path.dirname(project_root_path) not in sys.path:
-    sys.path.append(os.path.dirname(project_root_path))
-
-from agent.base import AbstractAgent, AgentReturnInfo
-from agent.pure_neuro_agent.prompts import DIRECT_PROMPT
+from chinatravel.agent.base import AbstractAgent, AgentReturnInfo
+from chinatravel.agent.pure_neuro_agent.prompts import DIRECT_PROMPT
 
 
 class Notebook:
@@ -27,6 +18,17 @@ class Notebook:
 
     def reset(self):
         self.note = ""
+
+
+def _parse_literal_call(action: str, expected_name: str) -> tuple[list, dict]:
+    parsed = ast.parse(action, mode="eval").body
+    if not isinstance(parsed, ast.Call) or not isinstance(parsed.func, ast.Name):
+        raise ValueError(f"Expected {expected_name}(...)")
+    if parsed.func.id != expected_name:
+        raise ValueError(f"Expected {expected_name}(...), got {parsed.func.id}(...)")
+    args = [ast.literal_eval(arg) for arg in parsed.args]
+    kwargs = {kw.arg: ast.literal_eval(kw.value) for kw in parsed.keywords if kw.arg}
+    return args, kwargs
 
 
 class ActAgent(AbstractAgent):
@@ -109,11 +111,13 @@ class ActAgent(AbstractAgent):
         observation = ""
         if action.startswith("Action"):
             action = action.split(":", 1)[1].strip()
+        if action.endswith("<STOP>"):
+            action = action[: -len("<STOP>")].strip()
         action_cmd = action.split("(")[0].strip()
         if action_cmd == "notedown":
-            notedown = self.notebook.write
             try:
-                observation = eval(action)
+                args, kwargs = _parse_literal_call(action, "notedown")
+                observation = self.notebook.write(*args, **kwargs)
                 self.notedown_cnt += 1
                 if self.notedown_cnt >= 3:
                     self.notedown_cnt = 1
@@ -125,10 +129,10 @@ class ActAgent(AbstractAgent):
             except Exception as e:
                 observation = "Error to note down: " + str(e)
         elif action_cmd == "plan":
-            plan = self.plan
             self.finished = True
             try:
-                observation = eval(action)
+                args, kwargs = _parse_literal_call(action, "plan")
+                observation = self.plan(*args, **kwargs)
                 self._ans = observation
             except Exception as e:
                 observation = "Error to plan: " + str(e)
@@ -178,19 +182,18 @@ class ReActAgent(ActAgent):
 
 
 if __name__ == "__main__":
-    from agent.llms import Deepseek, Qwen
-    from environment.world_env import WorldEnv
-    from agent.pure_neuro_agent.prompts import (
-        ZEROSHOT_ACT_INSTRUCTION,
+    import os
+
+    from chinatravel.agent.llms import create_llm
+    from chinatravel.environment.world_env import WorldEnv
+    from chinatravel.agent.pure_neuro_agent.prompts import (
         ONESHOT_REACT_INSTRUCTION,
     )
 
     print(os.environ.get("OPENAI_API_KEY"))
 
-    # deepseek = Deepseek()
-    qwen = Qwen()
+    llm = create_llm(None)
     env = WorldEnv()
-    # agent = ActAgent(env, deepseek, ZEROSHOT_ACT_INSTRUCTION, debug=True)
-    agent = ReActAgent(env, qwen, ONESHOT_REACT_INSTRUCTION, debug=True)
+    agent = ReActAgent(env, llm, ONESHOT_REACT_INSTRUCTION, debug=True)
     query = "当前位置上海。我一个人想去杭州玩1天，预算3000人民币，请给我一个旅行规划。"
     results = agent(query)

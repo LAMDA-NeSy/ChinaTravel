@@ -11,7 +11,7 @@ resume = false
 plan_file = ""
 
 [opencode]
-model = "dashscope/qwen3.6-27b"
+model = "openai/gpt-5.5"
 timeout = 900
 require_output_tags = true
 dangerously_skip_permissions = true
@@ -20,20 +20,17 @@ dangerously_skip_permissions = true
 # Either set api_key here in your local config.toml, or leave it empty and
 # export the env var named by api_key_env before running the script.
 api_key = ""
-api_key_env = "DASHSCOPE_API_KEY"
+api_key_env = "OPENAI_API_KEY"
 
 [opencode.provider]
-id = "dashscope"
-name = "DashScope"
+id = "openai"
+name = "OpenAI"
 npm = "@ai-sdk/openai-compatible"
-base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+base_url = "https://api.openai.com/v1"
 tool_call = true
 
-[opencode.provider.model_options]
-enable_thinking = false
-
 [codex]
-model = "qwen3.6-35b-a3b"
+model = "gpt-5.5"
 timeout = 900
 sandbox = "workspace-write"
 output_schema = false

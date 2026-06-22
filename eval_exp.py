@@ -1,42 +1,38 @@
 
-
 import argparse
 
-import numpy as np
-
-import sys
 import os
-import json
 
 project_root_path = os.path.dirname(os.path.abspath(__file__))
-if project_root_path not in sys.path: sys.path.insert(0, project_root_path)
 
 
-from chinatravel.data.load_datasets import load_query
-from chinatravel.evaluation.utils import load_json_file, validate_json
+def default_method_list(llm_name=None, *, lang="zh"):
+    from chinatravel.agent.load_model import build_method_name, resolve_llm_name
 
-from chinatravel.evaluation.schema_constraint import evaluate_schema_constraints
-from chinatravel.evaluation.commonsense_constraint import evaluate_commonsense_constraints
-from chinatravel.evaluation.hard_constraint import evaluate_hard_constraints, evaluate_hard_constraints_v2
-from chinatravel.evaluation.preference import evaluate_preference, evaluate_preference_v2
+    resolved_llm_name = resolve_llm_name(llm_name)
+    if not resolved_llm_name:
+        raise ValueError(
+            "--method all requires --llm <model> or CHINATRAVEL_OPENAI_MODEL/OPENAI_MODEL."
+        )
 
-
-METHOD_LIST = [
-    "example" "act_Deepseek_zeroshot",
-    "act_GPT4o_zeroshot",
-    "react_Deepseek_zeroshot",
-    "react_GPT4o_zeroshot",
-    "react_GLM4Plus_zeroshot",
-    "react_Deepseek_oneshot",
-    "react_GPT4o_oneshot",
-    "naive_ns_Deepseek",
-    "naive_ns_GPT4o",
-    "naive_ns_GLM4Plus",
-]
+    return [
+        build_method_name("RuleNeSy", "rule", lang=lang),
+        build_method_name("LLMNeSy", resolved_llm_name, lang=lang),
+        build_method_name("Act", resolved_llm_name, lang=lang),
+        build_method_name("ReAct", resolved_llm_name, lang=lang),
+        build_method_name("ReAct0", resolved_llm_name, lang=lang),
+        build_method_name(
+            "LLM-modulo",
+            resolved_llm_name,
+            lang=lang,
+            refine_steps=10,
+            oracle_translation=True,
+        ),
+        build_method_name("TPCAgent", resolved_llm_name, lang=lang),
+    ]
 
 
 def load_result(args, query_index, verbose=False):
-
     def load_result_for_method(method):
         plans = {}
         for query_id in query_index:
@@ -46,6 +42,8 @@ def load_result(args, query_index, verbose=False):
 
             try:
                 if os.path.exists(result_file):
+                    from chinatravel.evaluation.utils import load_json_file
+
                     result = load_json_file(result_file)
                     plans[query_id] = result
                 else:
@@ -56,10 +54,10 @@ def load_result(args, query_index, verbose=False):
 
     result = {}
     if args.method == "all":
-        method_list = []
-        for mi in METHOD_LIST:
-            if mi != "example":
-                method_list.append(mi)
+        method_list = default_method_list(
+            getattr(args, "llm", None),
+            lang=getattr(args, "lang", "zh"),
+        )
     else:
         method_list = [args.method]
 
@@ -77,14 +75,37 @@ if __name__ == "__main__":
     parser.add_argument("--splits", "-s", type=str, default="example")
     parser.add_argument(
         "--method", "-m", type=str, default="example"
-    )  # , choices=METHOD_LIST)
+    )
+    parser.add_argument(
+        "--llm",
+        "-l",
+        type=str,
+        default=None,
+        help="Model name used to derive default result directories when --method all.",
+    )
     parser.add_argument("--preference", "-p", action="store_true", default=False)
     parser.add_argument("--lang", "--locale", choices=["zh", "en"], default="zh")
     args = parser.parse_args()
+    if args.method == "all":
+        from chinatravel.agent.load_model import resolve_llm_name
+
+        if not resolve_llm_name(args.llm):
+            parser.error(
+                "--method all requires --llm <model> or CHINATRAVEL_OPENAI_MODEL/OPENAI_MODEL."
+            )
     if args.lang == "en" and args.method != "all" and not args.method.endswith("_en"):
         args.method += "_en"
 
     # print(args.splits)
+
+    from chinatravel.data.load_datasets import load_query
+    from chinatravel.evaluation.commonsense_constraint import (
+        evaluate_commonsense_constraints,
+    )
+    from chinatravel.evaluation.hard_constraint import evaluate_hard_constraints_v2
+    from chinatravel.evaluation.preference import evaluate_preference_v2
+    from chinatravel.evaluation.schema_constraint import evaluate_schema_constraints
+    from chinatravel.evaluation.utils import load_json_file
 
     query_index, query_data = load_query(args)
     method_list, result_data = load_result(args, query_index)
@@ -108,10 +129,7 @@ if __name__ == "__main__":
 
         print("method: ", method)
 
-        plan_count = 0
-        for plan in result_data[method]:
-            if plan != {}:
-                plan_count += 1
+        plan_count = sum(1 for plan in result_data[method].values() if plan)
         print("There are {} results...".format(plan_count))
 
 

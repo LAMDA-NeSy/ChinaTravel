@@ -1,22 +1,6 @@
-import sys
-import os
-
-from chinatravel.environment.tools.accommodations.apis import Accommodations
-from chinatravel.environment.tools.restaurants.apis import Restaurants
-from chinatravel.environment.tools.attractions.apis import Attractions
-from chinatravel.environment.tools.intercity_transport.apis import IntercityTransport
-from chinatravel.environment.tools.transportation.apis import Transportation
-
 from chinatravel.symbol_verification.concept_func import func_dict
-from chinatravel.evaluation.utils import load_json_file
-
-import pandas as pd
-
+from chinatravel.symbol_verification.dsl import execute_dsl_code
 from copy import deepcopy
-
-accommodation = Accommodations()
-restaurants = Restaurants()
-attractions = Attractions()
 
 def collect_personal_error(problem, plan, verbose=False):
     
@@ -31,21 +15,9 @@ def collect_personal_error(problem, plan, verbose=False):
     for idx, constraint in enumerate(problem["hard_logic_py"]):
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = plan
-        # exec(constraint, {"__builtins__": {"set": set, "print": print}}, vars_dict)
-        # results.append(vars_dict.get("result", False))
         try:
-            # Evaluate the constraint in a safe manner
-            exec(
-                constraint,
-                {
-                    "__builtins__": {
-                        "set": set,
-                    }
-                },
-                vars_dict,
-            )
+            execute_dsl_code(constraint, vars_dict, allowed_builtins={"set": set})
             res_i = vars_dict.get("result", False)
-            # results.append(bool(res_i))
             if not res_i:
                 error_info.append(f"用户要求未被满足：{problem['hard_logic_nl'][idx]}")
         except Exception as e:

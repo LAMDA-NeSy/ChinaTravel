@@ -4,10 +4,7 @@ from typing import Callable
 import os
 from geopy.distance import geodesic
 
-import sys
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from poi.apis import Poi
+from chinatravel.environment.tools.poi.apis import Poi
 from chinatravel.environment.language import CITY_SLUGS, city_names, normalize_lang, relative_database_path
 
 

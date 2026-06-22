@@ -2,16 +2,8 @@ import argparse
 
 import numpy as np
 
-import sys
 import os
 import json
-
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
 
 
 # from chinatravel.agent.utils import Logger, NpEncoder, load_json_file, save_json_file
@@ -369,9 +361,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--skip-exist", "-sk", type=int, default=0, help="skip if the plan exists"
     )
-    parser.add_argument(
-        "--llm", "-m", type=str, default=0, choices=["deepseek", "gpt-4o", "glm4-plus"]
-    )
+    parser.add_argument("--llm", "-m", type=str, default="rule")
     parser.add_argument(
         "--oracle_translation",
         action="store_true",
@@ -380,8 +370,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     from chinatravel.data.load_datasets import load_query
-    from agent.llms import Deepseek, GPT4o, GLM4Plus
-    from environment.world_env import WorldEnv
+    from chinatravel.agent.llms import create_llm
+    from chinatravel.agent.load_model import build_method_name
+    from chinatravel.environment.world_env import WorldEnv
 
     env = WorldEnv()
 
@@ -393,14 +384,9 @@ if __name__ == "__main__":
     if args.index is not None:
         query_index = [args.index]
 
-    if args.llm == "deepseek":
-        llm = Deepseek()
-    elif args.llm == "gpt-4o":
-        llm = GPT4o()
-    elif args.llm == "glm4-plus":
-        llm = GLM4Plus()
+    llm = create_llm(args.llm)
 
-    method = "RuleNeSy"
+    method = build_method_name("RuleNeSy", args.llm)
 
     method = method + "_" + args.llm
 

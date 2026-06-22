@@ -1,21 +1,9 @@
 import argparse
 
-import numpy as np
-
 import sys
 import os
-import json
-from func_timeout import func_timeout, FunctionTimedOut
 
 project_root_path = os.path.dirname(os.path.abspath(__file__))
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-
-from copy import deepcopy
-
-from chinatravel.data.load_datasets import load_query, save_json_file
-from chinatravel.agent.load_model import init_agent, init_llm
-from chinatravel.environment.world_env import WorldEnv
 
 
 if __name__ == "__main__":
@@ -36,8 +24,8 @@ if __name__ == "__main__":
         "--agent",
         "-a",
         type=str,
-        default=None,
-        choices=["TPCAgent"],
+        required=True,
+        choices=["TPCAgent", "UrbanTrip"],
     )
     parser.add_argument(
         "--llm",
@@ -57,8 +45,21 @@ if __name__ == "__main__":
     parser.add_argument('--oracle_translation', action='store_true', help='Set this flag to enable oracle translation.')
 
     args = parser.parse_args()
+    from chinatravel.agent.load_model import (
+        create_agent_runtime,
+        resolve_llm_name,
+    )
+
+    if not resolve_llm_name(args.llm):
+        parser.error(
+            "No model configured. Pass --llm <model> or set CHINATRAVEL_OPENAI_MODEL/OPENAI_MODEL."
+        )
 
     print(args)
+
+    from func_timeout import func_timeout, FunctionTimedOut
+
+    from chinatravel.data.load_datasets import load_query, save_json_file
 
     query_index, query_data = load_query(args)
     print(len(query_index), "samples")
@@ -66,44 +67,19 @@ if __name__ == "__main__":
     if args.index is not None:
         query_index = [args.index]
 
-    cache_dir = os.path.join(project_root_path, "cache")
-
-    method = args.agent + "_" + args.llm
-    if args.lang == "en":
-        method += "_en"
-    if args.agent == "LLM-modulo":
-        method += f"_{args.refine_steps}steps"
-
-        if not args.oracle_translation:
-            raise Exception("LLM-modulo must use oracle translation")
-
-    if args.oracle_translation:
-        method = method + "_oracletranslation"
-
-    res_dir = os.path.join(
-        project_root_path, "results", method
+    runtime = create_agent_runtime(
+        args.agent,
+        args.llm,
+        project_root_path=project_root_path,
+        lang=args.lang,
+        oracle_translation=args.oracle_translation,
     )
-    log_dir = os.path.join(
-        project_root_path, "cache", method
-    )
-    if not os.path.exists(res_dir):
-        os.makedirs(res_dir)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    res_dir = runtime.result_dir
+    log_dir = runtime.log_dir
+    agent = runtime.agent
 
     print("res_dir: ", res_dir)
     print("log_dir:", log_dir)
-
-    kwargs = {
-        "method": args.agent,
-        "env": WorldEnv(lang=args.lang),
-        "backbone_llm": init_llm(args.llm),
-        "cache_dir": cache_dir,
-        "log_dir": log_dir,
-        "debug": True,
-        "lang": args.lang,
-    }
-    agent = init_agent(kwargs)
 
     succ_count, eval_count = 0, 0
 

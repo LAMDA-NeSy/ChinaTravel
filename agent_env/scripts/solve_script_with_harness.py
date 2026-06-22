@@ -15,8 +15,6 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "agent_env" / "config.toml"
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 HIDDEN_QUERY_KEYS = {"hard_logic", "hard_logic_py", "hard_logic_nl"}
 OUTPUT_OPEN_TAG = "<output>"
@@ -194,12 +192,12 @@ def build_opencode_config(opencode_config: dict[str, Any], model: str) -> dict[s
     if not isinstance(provider, dict):
         raise ValueError("Config section [opencode.provider] must be a table.")
 
-    provider_id = str(provider.get("id") or "dashscope")
+    provider_id = str(provider.get("id") or "openai")
     model_id = provider_model_name(model, provider_id)
-    api_key_env = str(opencode_config.get("api_key_env") or "DASHSCOPE_API_KEY")
+    api_key_env = str(opencode_config.get("api_key_env") or "OPENAI_API_KEY")
 
     provider_options: dict[str, Any] = {
-        "baseURL": str(provider.get("base_url") or provider.get("baseURL") or ""),
+        "baseURL": str(provider.get("base_url") or provider.get("baseURL") or "https://api.openai.com/v1"),
         "apiKey": f"{{env:{api_key_env}}}",
     }
     extra_options = provider.get("options", {})
@@ -232,7 +230,7 @@ def build_opencode_config(opencode_config: dict[str, Any], model: str) -> dict[s
 
 def apply_opencode_env(env: dict[str, str], opencode_config: dict[str, Any]) -> None:
     api_key = opencode_config.get("api_key")
-    api_key_env = str(opencode_config.get("api_key_env") or "DASHSCOPE_API_KEY")
+    api_key_env = str(opencode_config.get("api_key_env") or "OPENAI_API_KEY")
     if api_key:
         env[api_key_env] = str(api_key)
 

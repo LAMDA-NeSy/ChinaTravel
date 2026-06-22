@@ -1,24 +1,6 @@
-import sys
-import os
-
-from chinatravel.environment.tools.accommodations.apis import Accommodations
-from chinatravel.environment.tools.restaurants.apis import Restaurants
-from chinatravel.environment.tools.attractions.apis import Attractions
-from chinatravel.environment.tools.intercity_transport.apis import IntercityTransport
-from chinatravel.environment.tools.transportation.apis import Transportation
-
 from chinatravel.symbol_verification.concept_func import func_dict
-from chinatravel.evaluation.utils import load_json_file
-
-import pandas as pd
-
+from chinatravel.symbol_verification.dsl import execute_dsl_code
 from copy import deepcopy
-
-accommodation = Accommodations()
-restaurants = Restaurants()
-attractions = Attractions()
-
-from .concept_func import *
 
 
 def evaluate_preference_py(preference_list, plan, verbose=False):
@@ -55,28 +37,14 @@ def evaluate_preference_py(preference_list, plan, verbose=False):
     for _, preference_concept, preference_code in preference_list:
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = plan
-        # exec(constraint, {"__builtins__": {"set": set, "print": print}}, vars_dict)
-        # results.append(vars_dict.get("result", False))
         try:
-            # Evaluate the constraint in a safe manner
-            exec(
+            execute_dsl_code(
                 preference_code,
-                {
-                    "__builtins__": {
-                        "set": set,
-                        "list": list,
-                    }
-                },
                 vars_dict,
+                allowed_builtins={"set": set, "list": list},
             )
             res_i = vars_dict.get(preference_concept, None)
-            # if type(res_i) != float:
-            #     raise Exception("The result of the constraint must be a float value.")
-            # if res_i == -1:
-            #     raise Exception("return -1")
-            
             results.append(float(res_i))
-            # results.append(result)
         except Exception as e:
             if verbose:
                 print(f"Error evaluating preference '{preference_code}': {e}")

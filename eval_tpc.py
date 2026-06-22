@@ -1,28 +1,10 @@
 
-
 import argparse
 
-import numpy as np
-
-import sys
 import os
 import json
 
 project_root_path = os.path.dirname(os.path.abspath(__file__))
-if project_root_path not in sys.path: sys.path.insert(0, project_root_path)
-
-
-from chinatravel.data.load_datasets import load_query
-from chinatravel.evaluation.utils import load_json_file, validate_json
-
-from chinatravel.evaluation.schema_constraint import evaluate_schema_constraints
-from chinatravel.evaluation.commonsense_constraint import evaluate_commonsense_constraints
-from chinatravel.evaluation.hard_constraint import evaluate_hard_constraints, evaluate_hard_constraints_v2
-from chinatravel.evaluation.preference import evaluate_preference, evaluate_preference_v2
-
-
-
-
 
 DEFAULT_ATTRACTION_PR="""
 attraction_count = 0
@@ -58,14 +40,15 @@ DEFAULT_PR=[
     DEFAULT_RES_PR
 ]
 
-METHOD_LIST = [
-]
-
-from tqdm import tqdm
-from chinatravel.symbol_verification.concept_func import func_dict
-from copy import deepcopy
-
 def cal_default_pr_score(query_index, query_data, result_data,all_pass_id):
+    import numpy as np
+    from copy import deepcopy
+
+    from tqdm import tqdm
+
+    from chinatravel.symbol_verification.concept_func import func_dict
+    from chinatravel.symbol_verification.dsl import execute_dsl_code
+
     all_score=[]
     def clamp(value):
         return max(0.0, min(1.0, value))
@@ -80,22 +63,9 @@ def cal_default_pr_score(query_index, query_data, result_data,all_pass_id):
             vars_dict = deepcopy(func_dict)
             vars_dict["plan"] = plan
 
-            # exec(constraint, {"__builtins__": {"set": set, "print": print}}, vars_dict)
-            # results.append(vars_dict.get("result", False))
             try:
-                # Evaluate the constraint in a safe manner
-                exec(
-                    constraint,
-                    {
-                        "__builtins__": {
-                            "set": set,
-                        }
-                    },
-                    vars_dict,
-                )
+                execute_dsl_code(constraint, vars_dict, allowed_builtins={"set": set})
                 res_i = vars_dict.get("result", False)
-                # print("result: ", res_i)
-                # print(type(res_i))
                 results.append(clamp(res_i))
             except Exception as e:
                 results.append(0.)
@@ -108,7 +78,6 @@ def cal_default_pr_score(query_index, query_data, result_data,all_pass_id):
 
 
 def load_result(args, query_index,path, verbose=False):
-
     def load_result_for_method(path):
         plans = {}
         for query_id in query_index:
@@ -118,6 +87,8 @@ def load_result(args, query_index,path, verbose=False):
 
             try:
                 if os.path.exists(result_file):
+                    from chinatravel.evaluation.utils import load_json_file
+
                     result = load_json_file(result_file)
                     plans[query_id] = result
                 else:
@@ -148,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument("--splits", "-s", type=str, default="example")
     parser.add_argument(
         "--method", "-m", type=str, default="travel_agent"
-    )  # , choices=METHOD_LIST)
+    )
     parser.add_argument("--preference", "-p", action="store_true", default=False)
     parser.add_argument("--lang", "--locale", choices=["zh", "en"], default="zh")
     args = parser.parse_args()
@@ -156,6 +127,15 @@ if __name__ == "__main__":
         args.method += "_en"
 
     # print(args.splits)
+
+    from chinatravel.data.load_datasets import load_query
+    from chinatravel.evaluation.commonsense_constraint import (
+        evaluate_commonsense_constraints,
+    )
+    from chinatravel.evaluation.hard_constraint import evaluate_hard_constraints_v2
+    from chinatravel.evaluation.preference import evaluate_preference_v2
+    from chinatravel.evaluation.schema_constraint import evaluate_schema_constraints
+    from chinatravel.evaluation.utils import load_json_file
 
 
     query_index, query_data = load_query(args)

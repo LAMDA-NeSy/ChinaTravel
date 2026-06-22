@@ -17,6 +17,8 @@ Run commands from the repository root:
 
 ```bash
 python -m agent_env.cli tools
+python -m agent_env.cli openai-tools
+python -m agent_env.cli responses-tools
 python -m agent_env.cli splits
 python -m agent_env.cli call <tool_name> '<json_arguments>'
 python -m agent_env.cli world "<WorldEnv command>"
@@ -102,18 +104,18 @@ Use the bundled harness to load a configured split, call a harness non-interacti
 save plans under `results/<method>/<uid>.json`, and evaluate them:
 
 ```bash
-python agent_env/scripts/solve_script_with_harness.py --split easy
+python -m agent_env.scripts.solve_script_with_harness --split easy
 ```
 
 Useful options:
 
 ```bash
-python agent_env/scripts/solve_script_with_harness.py --split easy --uid <uid>
-python agent_env/scripts/solve_script_with_harness.py --split easy --harness opencode --model dashscope/qwen3.6-27b
-python agent_env/scripts/solve_script_with_harness.py --split easy --harness codex --model gpt-5.5
-python agent_env/scripts/solve_script_with_harness.py --split easy --timeout 900
-python agent_env/scripts/solve_script_with_harness.py --split easy --limit 1
-python agent_env/scripts/solve_script_with_harness.py --split easy --no-run-harness
+python -m agent_env.scripts.solve_script_with_harness --split easy --uid <uid>
+python -m agent_env.scripts.solve_script_with_harness --split easy --harness opencode --model openai/gpt-5.5
+python -m agent_env.scripts.solve_script_with_harness --split easy --harness codex --model gpt-5.5
+python -m agent_env.scripts.solve_script_with_harness --split easy --timeout 900
+python -m agent_env.scripts.solve_script_with_harness --split easy --limit 1
+python -m agent_env.scripts.solve_script_with_harness --split easy --no-run-harness
 ```
 
 The harness hides oracle verifier fields from the selected model, but keeps them

@@ -1,18 +1,9 @@
 import os
-import sys
 import time
 
 project_root_path = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-if os.path.join(project_root_path, "chinatravel") not in sys.path:
-    sys.path.insert(0, os.path.join(project_root_path, "chinatravel"))
-
-import json
-import pandas as pd
-from chinatravel.evaluation.utils import load_json_file
 
 
 class CompareError(Exception):
@@ -117,6 +108,8 @@ def get_funcname_by_preference(preference: str):
 
 
 def get_rank_with_value(value_list, best_type: str):
+    import pandas as pd
+
     pandas_data = pd.Series(value_list)
     if best_type == "max":
         worst_value = min(pandas_data) - 1
@@ -136,6 +129,8 @@ def get_rank_with_value(value_list, best_type: str):
 
 
 def load_query(query_id_list):
+    from chinatravel.evaluation.utils import load_json_file
+
     query_data = {}
     data_dir = os.path.join(project_root_path, "chinatravel/data")
     data_dir_list = os.listdir(data_dir)
@@ -152,6 +147,8 @@ def load_query(query_id_list):
 
 
 def rank(method_list, split_list):
+    import pandas as pd
+
     # load query data
     for split in split_list:
         query_id_list = []
@@ -239,14 +236,44 @@ def rank(method_list, split_list):
 
 
 if __name__ == "__main__":
-    method_list = [
-        "naive_ns_Deepseek",
-        "naive_ns_GLM4Plus",
-        "naive_ns_GPT4o",
-        # "react_GPT4o_oneshot",
-        # "react_Deepseek_oneshot",
-    ]
-    split_list = ["preference"]
+    import argparse
+
+    from chinatravel.agent.load_model import build_method_name, resolve_llm_name
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--splits", "-s", type=str, default="preference")
+    parser.add_argument(
+        "--methods",
+        "-m",
+        type=str,
+        default="",
+        help="Comma-separated result directory names to rank.",
+    )
+    parser.add_argument(
+        "--llm",
+        "-l",
+        type=str,
+        default=None,
+        help="Model name used to derive default method names when --methods is omitted.",
+    )
+    parser.add_argument("--lang", "--locale", choices=["zh", "en"], default="zh")
+    args = parser.parse_args()
+
+    if args.methods:
+        method_list = [method.strip() for method in args.methods.split(",") if method.strip()]
+    else:
+        resolved_llm_name = resolve_llm_name(args.llm)
+        if not resolved_llm_name:
+            parser.error(
+                "--methods is required unless --llm or CHINATRAVEL_OPENAI_MODEL/OPENAI_MODEL is set."
+            )
+        method_list = [
+            build_method_name("LLMNeSy", resolved_llm_name, lang=args.lang),
+            build_method_name("ReAct", resolved_llm_name, lang=args.lang),
+            build_method_name("ReAct0", resolved_llm_name, lang=args.lang),
+            build_method_name("TPCAgent", resolved_llm_name, lang=args.lang),
+        ]
+    split_list = [split.strip() for split in args.splits.split(",") if split.strip()]
     rank_res = rank(method_list, split_list)
     print(rank_res)
     file_name = f"rank_{time.strftime('%Y%m%d%H%M%S')}.csv"

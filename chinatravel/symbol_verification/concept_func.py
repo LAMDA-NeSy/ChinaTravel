@@ -1,6 +1,3 @@
-from chinatravel.environment.tools.accommodations.apis import Accommodations
-from chinatravel.environment.tools.restaurants.apis import Restaurants
-from chinatravel.environment.tools.attractions.apis import Attractions
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
 
 
@@ -17,6 +14,10 @@ def _infer_lang_from_city(city):
 def _tools_for_lang(lang=None):
     lang = normalize_lang(lang or _current_lang)
     if lang not in _TOOLS_BY_LANG:
+        from chinatravel.environment.tools.accommodations.apis import Accommodations
+        from chinatravel.environment.tools.restaurants.apis import Restaurants
+        from chinatravel.environment.tools.attractions.apis import Attractions
+
         _TOOLS_BY_LANG[lang] = {
             "accommodations": Accommodations(lang=lang),
             "restaurants": Restaurants(lang=lang),
