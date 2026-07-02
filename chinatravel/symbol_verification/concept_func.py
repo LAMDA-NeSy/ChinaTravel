@@ -126,6 +126,8 @@ def dayactivities(plan, day):
 
 
 def activity_position(activity):
+    if activity.get("type") in {"airplane", "train"}:
+        return ""
     return activity.get("position", "")
 
 

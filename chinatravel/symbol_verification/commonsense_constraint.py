@@ -77,12 +77,105 @@ Available
 7. space
 '''
 
+_INTERCITY_ACTIVITY_TYPES = {"airplane", "train"}
+_POSITION_ACTIVITY_TYPES = {"attraction", "breakfast", "lunch", "dinner", "accommodation"}
+
+
 def return_info_debug(flag, info):
     return flag, info
 
 
 def return_info_test(flag, info):
     return flag
+
+
+def Is_activity_grounded(symbolic_input, plan_json, verbose=False):
+    
+    table_statistics = pd.DataFrame(columns=['Invalid or ungrounded activity entity'])
+
+    error_info = []
+
+    if not isinstance(plan_json, dict):
+        table_statistics.loc[0] = [1]
+        error_info = ["Error plan type, must be python dict"]
+        return table_statistics, error_info
+    try:
+        plan = plan_json["itinerary"]
+    except:
+        table_statistics.loc[0] = [1]
+        error_info = ["Error plan type, must provide itinerary"]
+        return table_statistics, error_info
+
+    table_statistics.loc[0] = [0]
+
+    if not isinstance(plan, list) or len(plan) == 0:
+        table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+        error_info.append("Itinerary must be a non-empty list.")
+        return table_statistics, error_info
+
+    last_day_idx = len(plan) - 1
+    for day_idx, day_plan_i in enumerate(plan):
+        activities = day_plan_i.get("activities", []) if isinstance(day_plan_i, dict) else []
+        if not isinstance(activities, list):
+            table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+            error_info.append("Each itinerary day must provide an activities list.")
+            continue
+
+        last_activity_idx = len(activities) - 1
+        for activity_idx, activity_i in enumerate(activities):
+            if not isinstance(activity_i, dict):
+                table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                error_info.append("Each activity must be a dict.")
+                continue
+
+            activity_type = activity_i.get("type")
+            is_first_activity = day_idx == 0 and activity_idx == 0
+            is_last_activity = day_idx == last_day_idx and activity_idx == last_activity_idx
+
+            if activity_type in _INTERCITY_ACTIVITY_TYPES:
+                if not (is_first_activity or is_last_activity):
+                    table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                    error_info.append("Intercity transport can only appear as the first or last activity: " + str(activity_i))
+
+                if activity_i.get("position"):
+                    table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                    error_info.append("Intercity transport must not provide a POI position: " + str(activity_i))
+
+                required_id = "FlightID" if activity_type == "airplane" else "TrainID"
+                forbidden_id = "TrainID" if activity_type == "airplane" else "FlightID"
+                if required_id not in activity_i:
+                    table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                    error_info.append("Intercity transport misses {}: ".format(required_id) + str(activity_i))
+                if forbidden_id in activity_i:
+                    table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                    error_info.append("Intercity transport has mismatched id field {}: ".format(forbidden_id) + str(activity_i))
+                if "start" not in activity_i or "end" not in activity_i:
+                    table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                    error_info.append("Intercity transport must provide start and end: " + str(activity_i))
+                continue
+
+            if activity_type not in _POSITION_ACTIVITY_TYPES:
+                table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                error_info.append("Unknown activity type: " + str(activity_i))
+                continue
+
+            if not activity_i.get("position"):
+                table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                error_info.append("POI activity must provide a position: " + str(activity_i))
+
+            forbidden_keys = [key for key in ("start", "end", "TrainID", "FlightID") if key in activity_i]
+            if forbidden_keys:
+                table_statistics.loc[0, 'Invalid or ungrounded activity entity'] = 1
+                error_info.append("POI activity must not provide intercity fields {}: ".format(forbidden_keys) + str(activity_i))
+
+    if verbose:
+        if table_statistics.loc[0].sum() == 0:
+            print("Activity grounding passed!")
+        else:
+            print(error_info)
+            print(table_statistics)
+    return table_statistics, error_info
+
 
 
 def Is_intercity_transport_correct(symbolic_input, plan_json, verbose=False):
@@ -1030,16 +1123,30 @@ def Is_space_correct(symbolic_input, plan_json, verbose=False):
     plan = plan_json["itinerary"]
 
     position_list = []
+    last_day_idx = len(plan) - 1
 
-    for day_plan_i in plan:
-        for activity_i in day_plan_i["activities"]:
+    for day_idx, day_plan_i in enumerate(plan):
+        activities = day_plan_i["activities"]
+        last_activity_idx = len(activities) - 1
+        for activity_idx, activity_i in enumerate(activities):
+            
+            activity_type = activity_i.get("type")
+            is_first_activity = day_idx == 0 and activity_idx == 0
+            is_last_activity = day_idx == last_day_idx and activity_idx == last_activity_idx
+            if activity_type in _INTERCITY_ACTIVITY_TYPES and not (is_first_activity or is_last_activity):
+                table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
+                error_info.append("Intercity transport can only appear as the first or last activity: " + str(activity_i))
 
             if not "position" in activity_i:
-                if "start" in activity_i:
+                if activity_type not in _INTERCITY_ACTIVITY_TYPES:
+                    table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
+                    error_info.append("Only intercity transport may omit position: " + str(activity_i))
+                    continue
+                if "start" in activity_i and "end" in activity_i:
                     current_position = activity_i["start"]
                 else:
                     table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
-                    error_info.append("Every activity need a position key: ".format(activity_i))
+                    error_info.append("Every activity need a position or start/end keys: " + str(activity_i))
                     continue
 
             else:
@@ -1100,7 +1207,7 @@ def Is_space_correct(symbolic_input, plan_json, verbose=False):
 def func_commonsense_constraints(symbolic_input, plan_json, verbose=False, lang=None):
     _set_tool_lang(lang or _infer_lang(symbolic_input))
 
-    func_list = [Is_intercity_transport_correct, Is_attractions_correct, Is_hotels_correct, Is_restaurants_correct, Is_transport_correct, Is_time_correct, Is_space_correct]
+    func_list = [Is_activity_grounded, Is_intercity_transport_correct, Is_attractions_correct, Is_hotels_correct, Is_restaurants_correct, Is_transport_correct, Is_time_correct, Is_space_correct]
     succ_flag = True
     error_list = []
     for func in func_list:
@@ -1125,7 +1232,7 @@ def func_commonsense_constraints(symbolic_input, plan_json, verbose=False, lang=
 def evaluate_commonsense_constraints(data_index, symbolic_input_dict, plan_json_dict, verbose=False):
     # assert len(symbolic_input_list)==len(plan_json_list)
 
-    func_list = [Is_intercity_transport_correct, Is_attractions_correct, Is_hotels_correct, Is_restaurants_correct, Is_transport_correct, Is_time_correct, Is_space_correct]
+    func_list = [Is_activity_grounded, Is_intercity_transport_correct, Is_attractions_correct, Is_hotels_correct, Is_restaurants_correct, Is_transport_correct, Is_time_correct, Is_space_correct]
     total_correct = 0
 
     individual_results = []
