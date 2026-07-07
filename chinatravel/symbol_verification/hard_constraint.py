@@ -13,6 +13,7 @@ from chinatravel.environment.language import CITY_NAMES, normalize_lang
 from chinatravel.symbol_verification.concept_func import (
     func_dict,
     normalize_concept_constraint_source,
+    normalize_poi_name,
     set_concept_func_lang,
 )
 from chinatravel.evaluation.utils import load_json_file
@@ -246,6 +247,7 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
 
             if not "position" in activity:
                 continue
+            position = normalize_poi_name(activity["position"])
 
             if (
                 activity["type"] == "breakfast"
@@ -253,11 +255,11 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
                 or activity["type"] == "dinner"
             ):
                 select_food_type = restaurants.select(
-                    target_city, key="name", func=lambda x: x == activity["position"]
+                    target_city, key="name", func=lambda x: x == position
                 )["cuisine"]
                 if not select_food_type.empty:
                     food_type.add(select_food_type.iloc[0])
-                restaurant_names.add(activity["position"])
+                restaurant_names.add(position)
 
                 if "cost" in activity:
                     food_prices.append(activity["cost"])
@@ -267,11 +269,11 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
 
             if activity["type"] == "accommodation":
                 select_hotel_type = accommodation.select(
-                    target_city, key="name", func=lambda x: x == activity["position"]
+                    target_city, key="name", func=lambda x: x == position
                 )["featurehoteltype"]
                 if not select_hotel_type.empty:
                     hotel_feature.add(select_hotel_type.iloc[0])
-                hotel_names.add(activity["position"])
+                hotel_names.add(position)
 
                 if "cost" in activity:
                     hotel_prices.append(activity["cost"])
@@ -287,7 +289,7 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
 
             if activity["type"] == "attraction":
                 select_attraction_type = attractions.select(
-                    target_city, key="name", func=lambda x: x == activity["position"]
+                    target_city, key="name", func=lambda x: x == position
                 )["type"]
                 if not select_attraction_type.empty:
                     spot_type.add(select_attraction_type.iloc[0])
@@ -298,7 +300,7 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
                     # print(ood_attractions_dataframe.loc[ood_attractions_dataframe['name'] == activity["position"]])
 
                     attraction_sel = ood_attractions_dataframe.loc[
-                        ood_attractions_dataframe["name"] == activity["position"]
+                        ood_attractions_dataframe["name"] == position
                     ]
                     if len(attraction_sel) > 0:
                         attraction_info = attraction_sel.iloc[0]
@@ -306,7 +308,7 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
                         for ood_type in ood_type_dict:
                             if attraction_info[ood_type] == 1:
                                 spot_type.add(ood_type_dict[ood_type])
-                attraction_names.add(activity["position"])
+                attraction_names.add(position)
 
                 if "cost" in activity:
                     total_cost += activity.get("cost", 0)

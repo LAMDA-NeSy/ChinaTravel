@@ -47,6 +47,9 @@ _CONCEPT_LITERAL_ALIASES = {
     for aliases in _CONCEPT_VALUE_ALIASES.values()
     for alias, canonical in aliases.items()
 }
+_POI_NAME_ALIASES = {
+    "Bistro Sola": "Sola Bistro",
+}
 
 
 def _infer_lang_from_city(city):
@@ -77,11 +80,17 @@ def normalize_concept_value(kind, value):
     return _CONCEPT_VALUE_ALIASES.get(kind, {}).get(value, value)
 
 
+def normalize_poi_name(value):
+    if not isinstance(value, str):
+        return value
+    return _POI_NAME_ALIASES.get(value, value)
+
+
 def normalize_concept_constraint_source(source):
     if not isinstance(source, str):
         return source
     normalized = source
-    for alias, canonical in _CONCEPT_LITERAL_ALIASES.items():
+    for alias, canonical in {**_CONCEPT_LITERAL_ALIASES, **_POI_NAME_ALIASES}.items():
         for quote in ("'", '"'):
             normalized = normalized.replace(
                 f"{quote}{alias}{quote}", f"{quote}{canonical}{quote}"
@@ -126,7 +135,9 @@ def dayactivities(plan, day):
 
 
 def activity_position(activity):
-    return activity.get("position", "")
+    if activity.get("type") in {"airplane", "train"}:
+        return ""
+    return normalize_poi_name(activity.get("position", ""))
 
 
 def activity_cost(activity):
@@ -257,8 +268,9 @@ def room_type(activity):
 
 def restaurant_type(activity, target_city):
     restaurants = _tools_for_lang(_infer_lang_from_city(target_city))["restaurants"]
+    position = normalize_poi_name(activity["position"])
     select_food_type = restaurants.select(
-        target_city, key="name", func=lambda x: x == activity["position"]
+        target_city, key="name", func=lambda x: x == position
     )["cuisine"]
     if not select_food_type.empty:
         return normalize_concept_value("restaurant", select_food_type.iloc[0])
@@ -267,8 +279,9 @@ def restaurant_type(activity, target_city):
 
 def attraction_type(activity, target_city):
     attractions = _tools_for_lang(_infer_lang_from_city(target_city))["attractions"]
+    position = normalize_poi_name(activity["position"])
     select_attr_type = attractions.select(
-        target_city, key="name", func=lambda x: x == activity["position"]
+        target_city, key="name", func=lambda x: x == position
     )["type"]
     if not select_attr_type.empty:
         return normalize_concept_value("attraction", select_attr_type.iloc[0])
@@ -277,8 +290,9 @@ def attraction_type(activity, target_city):
 
 def accommodation_type(activity, target_city):
     accommodations = _tools_for_lang(_infer_lang_from_city(target_city))["accommodations"]
+    position = normalize_poi_name(activity["position"])
     select_hotel_type = accommodations.select(
-        target_city, key="name", func=lambda x: x == activity["position"]
+        target_city, key="name", func=lambda x: x == position
     )["featurehoteltype"]
     if not select_hotel_type.empty:
         return normalize_concept_value("accommodation", select_hotel_type.iloc[0])
