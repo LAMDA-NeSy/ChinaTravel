@@ -1191,6 +1191,12 @@ def Is_space_correct(symbolic_input, plan_json, verbose=False):
                         table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
                         error_info.append("The destination of the transport must be equal to the position of the current activity.: " + str(activity_i))
                         # continue
+            elif (len(position_list) > 0) and activity_i.get("transports"):
+                table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
+                error_info.append(
+                    "Transport must be empty between activities at the same position: "
+                    + str(activity_i)
+                )
 
             if "position" in activity_i:
                 position_list.append(normalize_poi_name(activity_i["position"]))
