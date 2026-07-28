@@ -674,34 +674,43 @@ def Is_hotels_correct(symbolic_input, plan_json, verbose=False):
 def Is_restaurants_correct(symbolic_input, plan_json, verbose=False): 
     
     target_city = symbolic_input["target_city"]
-    table_statistics = pd.DataFrame(columns=['Unavailable Restruants', 'Visiting Restruants in their closed time', 'Repeated Restruants Choices', 'Incorrect price Information of Restruants', 'Incorrect cost Information of Restruants', 'Inappropriate Meal Times'])
+    table_statistics = pd.DataFrame(columns=['Unavailable Restruants', 'Visiting Restruants in their closed time', 'Repeated Restruants Choices', 'Incorrect price Information of Restruants', 'Incorrect cost Information of Restruants', 'Inappropriate Meal Times', 'Repeated Meal Types in One Day'])
 
     error_info = []    
     try: 
         plan_json["itinerary"]
     except: 
-        table_statistics.loc[0] = [1, 1, 1, 1, 1, 1]
+        table_statistics.loc[0] = 1
         error_info = ["Error plan type, must be python dict"]
         return table_statistics, error_info
 
-    table_statistics.loc[0] = [0, 0, 0, 0, 0, 0]
+    table_statistics.loc[0] = 0
 
     plan = plan_json["itinerary"]
     
     restaurants_list = []
     restaurants_time_list = []
 
-    for day_plan_i in plan:
+    for day_idx, day_plan_i in enumerate(plan):
+        meal_counts = {"breakfast": 0, "lunch": 0, "dinner": 0}
         for activity_i in day_plan_i["activities"]:
             try: activity_i["type"]
             except: continue
             if not activity_i["type"] in ["breakfast", "lunch", "dinner"]:
                 continue
+
+            meal_type = activity_i["type"]
+            meal_counts[meal_type] += 1
+            if meal_counts[meal_type] > 1:
+                table_statistics.loc[0, 'Repeated Meal Types in One Day'] = 1
+                error_info.append(
+                    "Only one {} is allowed on day {}.".format(meal_type, day_idx + 1)
+                )
             
             # print(activity_i)
             try: activity_i["position"]
             except: 
-                table_statistics.loc[0] = [1, 1, 1, 1, 1, 1]
+                table_statistics.loc[0] = 1
                 error_info.append("No position information!")
                 return table_statistics, error_info
             
@@ -716,7 +725,7 @@ def Is_restaurants_correct(symbolic_input, plan_json, verbose=False):
                 select_hotel=accommodation.select(target_city,key='name',func=lambda x:x==position)
     
                 if select_hotel.empty:
-                    table_statistics.loc[0] = [1, 1, 1, 1, 1, 1]
+                    table_statistics.loc[0] = 1
                     error_info.append("No information found given restaurant [{}]".format(activity_i["position"]))
                 try:
                     activity_i["price"]
@@ -752,7 +761,7 @@ def Is_restaurants_correct(symbolic_input, plan_json, verbose=False):
             
             if select_restaurant.empty:
                 # return return_info(False, "No information found given restaurant [{}]".format(activity_i["position"]))
-                table_statistics.loc[0] = [1, 1, 1, 1, 1, 1]
+                table_statistics.loc[0] = 1
                 error_info.append("No information found given restaurant [{}]".format(activity_i["position"]))
                 continue
             
@@ -1067,8 +1076,9 @@ def Is_time_correct(symbolic_input, plan_json, verbose=False):
     table_statistics.loc[0] = [0, 0]
 
     plan = plan_json["itinerary"]
-    for day_plan_i in plan:
-        for activity_i in day_plan_i["activities"]:
+    for day_idx, day_plan_i in enumerate(plan):
+        previous_activity_end = None
+        for activity_idx, activity_i in enumerate(day_plan_i["activities"]):
             
             # print(activity_i)
             try: activity_i["start_time"] and activity_i["end_time"]
@@ -1076,28 +1086,43 @@ def Is_time_correct(symbolic_input, plan_json, verbose=False):
                 table_statistics.loc[0, 'Invalid duration information of each activity'] = 1
                 error_info = ["Activity should provide start_time and end_time"]
                 return table_statistics, error_info
-    
+
             activity_st_time = activity_i["start_time"]
             activity_ed_time = activity_i["end_time"]
+            activity_st_real = time2real(activity_st_time)
+            activity_ed_real = time2real(activity_ed_time)
 
-            if time2real(activity_st_time) >= time2real(activity_ed_time) and (not activity_i["type"] in ["train", "airplane"]): # 可能出现次日到达
+            if activity_st_real >= activity_ed_real and (not activity_i["type"] in ["train", "airplane"]): # 可能出现次日到达
                 table_statistics.loc[0, 'Does not follow Chronological Order'] = 1
                 error_info.append("Activities must cost time: " + str(activity_i))
-            
 
-            if not "transports" in activity_i:
-                continue
+            if previous_activity_end is not None and activity_st_real < previous_activity_end:
+                table_statistics.loc[0, 'Does not follow Chronological Order'] = 1
+                error_info.append(
+                    "Activities must not overlap on day {}, activity {}: {}".format(
+                        day_idx + 1, activity_idx + 1, activity_i
+                    )
+                )
 
-            if len(activity_i["transports"]) > 0:
+            if len(activity_i.get("transports", [])) > 0:
                 transport_st_time = activity_i["transports"][0]["start_time"]
                 transport_ed_time = activity_i["transports"][-1]["end_time"]
-            
-                if time2real(activity_st_time) < time2real(transport_ed_time):
+                transport_st_real = time2real(transport_st_time)
+                transport_ed_real = time2real(transport_ed_time)
 
+                if previous_activity_end is not None and transport_st_real < previous_activity_end:
+                    table_statistics.loc[0, 'Does not follow Chronological Order'] = 1
+                    error_info.append(
+                        "Transport must depart after the previous activity ends on day {}, activity {}: {}".format(
+                            day_idx + 1, activity_idx + 1, activity_i
+                        )
+                    )
+
+                if activity_st_real < transport_ed_real:
                     table_statistics.loc[0, 'Does not follow Chronological Order'] = 1
                     error_info.append("Must arrive at the location before starting the activity: " + str(activity_i))
 
-            
+            previous_activity_end = activity_ed_real
 
     if verbose:
         if table_statistics.loc[0].sum() == 0:
