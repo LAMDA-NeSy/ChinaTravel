@@ -41,8 +41,11 @@ for activity in allactivities(plan):
     if transports!=[]:
         transport_count += 1
         time_cost += innercity_transport_time(transports)
-average_time_cost = time_cost / transport_count if transport_count > 0 else -1
-result= (-1/105) * average_time_cost + 8/7
+if transport_count > 0:
+    average_time_cost = time_cost / transport_count
+    result= (-1/105) * average_time_cost + 8/7
+else:
+    result=0
 """
 DEFAULT_RES_PR="""
 res_count=0
@@ -81,6 +84,7 @@ def cal_default_pr_score(query_index, query_data, result_data,all_pass_id):
         results = []
         if idx not in all_pass_id:
             results=np.zeros(len(DEFAULT_PR))
+            all_score.append(results)
             continue
         for constraint in DEFAULT_PR:
             vars_dict = deepcopy(func_dict)

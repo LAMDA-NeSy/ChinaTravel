@@ -26,6 +26,68 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
+def _resolve_local_query_paths(data_dir, split, query_ids, lang):
+    preferred_names = [split]
+    if lang == "en" and not split.endswith("_EN"):
+        preferred_names.append(f"{split}_EN")
+    preferred_dirs = [
+        os.path.join(data_dir, name)
+        for name in preferred_names
+        if os.path.isdir(os.path.join(data_dir, name))
+    ]
+    for split_dir in preferred_dirs:
+        paths = {
+            query_id: os.path.join(split_dir, f"{query_id}.json")
+            for query_id in query_ids
+        }
+        if all(os.path.isfile(path) for path in paths.values()):
+            return paths
+    if preferred_dirs:
+        missing = {
+            split_dir: [
+                query_id
+                for query_id in query_ids
+                if not os.path.isfile(
+                    os.path.join(split_dir, f"{query_id}.json")
+                )
+            ]
+            for split_dir in preferred_dirs
+        }
+        raise ValueError(
+            f"Split directory does not contain every configured UID: {missing}"
+        )
+
+    indexed_paths = {query_id: [] for query_id in query_ids}
+    for directory_name in sorted(os.listdir(data_dir)):
+        directory = os.path.join(data_dir, directory_name)
+        if not os.path.isdir(directory):
+            continue
+        for query_id in query_ids:
+            path = os.path.join(directory, f"{query_id}.json")
+            if os.path.isfile(path):
+                indexed_paths[query_id].append(path)
+
+    missing = [
+        query_id for query_id, paths in indexed_paths.items() if not paths
+    ]
+    ambiguous = {
+        query_id: paths
+        for query_id, paths in indexed_paths.items()
+        if len(paths) > 1
+    }
+    if missing or ambiguous:
+        raise ValueError(
+            "Unable to resolve local split {!r}: missing={}, ambiguous={}".format(
+                split,
+                missing,
+                ambiguous,
+            )
+        )
+    return {
+        query_id: paths[0] for query_id, paths in indexed_paths.items()
+    }
+
+
 def load_query_local(args, version="", verbose=False):
     query_data = {}
     lang = normalize_lang(getattr(args, "lang", None))
@@ -55,28 +117,28 @@ def load_query_local(args, version="", verbose=False):
     if lang == "en":
         data_dir = os.path.join(data_dir, "en")
 
-    dir_list = os.listdir(data_dir)
-    for dir_i in dir_list:
-        dir_ii = os.path.join(data_dir, dir_i)
-        if os.path.isdir(dir_ii):
-            file_list = os.listdir(dir_ii)
-
-            for file_i in file_list:
-                query_id = file_i.split(".")[0]
-                if query_id in query_id_list:
-                    data_i = json.load(
-                        open(os.path.join(dir_ii, file_i), encoding="utf-8")
-                    )
-
-                    if hasattr(args, 'oracle_translation') and not args.oracle_translation:
-                        if "hard_logic" in data_i:
-                            del data_i["hard_logic"]
-                        if "hard_logic_py" in data_i:
-                            del data_i["hard_logic_py"]
-                        if "hard_logic_nl" in data_i:
-                            del data_i["hard_logic_nl"]
-
-                    query_data[query_id] = data_i
+    query_paths = _resolve_local_query_paths(
+        data_dir,
+        args.splits,
+        query_id_list,
+        lang,
+    )
+    for query_id in query_id_list:
+        with open(query_paths[query_id], encoding="utf-8") as query_file:
+            data_i = json.load(query_file)
+        if data_i.get("uid") != query_id:
+            raise ValueError(
+                f"Query UID mismatch for {query_paths[query_id]}: "
+                f"expected {query_id!r}, got {data_i.get('uid')!r}"
+            )
+        if hasattr(args, 'oracle_translation') and not args.oracle_translation:
+            if "hard_logic" in data_i:
+                del data_i["hard_logic"]
+            if "hard_logic_py" in data_i:
+                del data_i["hard_logic_py"]
+            if "hard_logic_nl" in data_i:
+                del data_i["hard_logic_nl"]
+        query_data[query_id] = data_i
 
     # print(query_data)
 
@@ -164,4 +226,3 @@ if __name__ == "__main__":
             print(uid, query_data[uid])
         else:
             raise ValueError(f"{uid} not in query_data")
-
