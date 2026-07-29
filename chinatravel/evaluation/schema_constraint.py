@@ -19,6 +19,7 @@ import pandas as pd
 import json
 import jsonschema
 from jsonschema import validate
+from jsonschema.validators import validator_for
 
 def validate_json(json_data, schema):
     try:
@@ -34,6 +35,9 @@ def evaluate_schema_constraints(data_index, plan_json_dict, schema):
     total_correct = 0
     result_agg = pd.DataFrame(columns=['data_id', "schema"])
     result_agg['data_id'] = data_index
+    validator_class = validator_for(schema)
+    validator_class.check_schema(schema)
+    validator = validator_class(schema)
 
     pass_id = []
 
@@ -44,7 +48,7 @@ def evaluate_schema_constraints(data_index, plan_json_dict, schema):
 
         succ_flag = 0
         try:        
-            if validate_json(plan_json, schema):
+            if validator.is_valid(plan_json):
                 succ_flag = 1
                 pass_id.append(idx)
         except:
@@ -114,4 +118,3 @@ if __name__ == "__main__":
     # for item in info_list:
     #     print(item)
     # print(info_list)
-
