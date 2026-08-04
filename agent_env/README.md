@@ -35,8 +35,11 @@ return initialization errors until the official prerequisites are present.
 Configure the agent client to run:
 
 ```bash
-python -m agent_env.mcp_stdio
+CHINATRAVEL_LANG=en python -m agent_env.mcp_stdio
 ```
+
+`CHINATRAVEL_LANG` selects both the query language and sandbox database. It accepts
+`en` or `zh`.
 
 The server exposes tools such as:
 
@@ -57,25 +60,25 @@ advanced query needs the original `WorldEnv` command-string surface.
 List available tools:
 
 ```bash
-python -m agent_env.cli tools
+python -m agent_env.cli --lang en tools
 ```
 
 Call a structured tool:
 
 ```bash
-python -m agent_env.cli call attractions_keys '{"city":"上海"}'
+python -m agent_env.cli --lang en call attractions_keys '{"city":"Shanghai"}'
 ```
 
 Call the original command-string interface:
 
 ```bash
-python -m agent_env.cli world "attractions_keys('上海')"
+python -m agent_env.cli --lang en world "attractions_keys('Shanghai')"
 ```
 
 Start an interactive prompt:
 
 ```bash
-python -m agent_env.cli
+python -m agent_env.cli --lang en
 ```
 
 Inside the prompt:
@@ -96,9 +99,12 @@ Create a local config from the tracked example:
 cp agent_env/config.toml.example agent_env/config.toml
 ```
 
-Edit `agent_env/config.toml` to set the split, harness, smoke-test limit,
+Edit `agent_env/config.toml` to set the split, language, harness, smoke-test limit,
 models, providers, and API key or API key env var. The local config is ignored
 by git because it may contain a secret.
+
+Keep `lang = "en"` for the English competition data. This setting is applied to
+query loading, environment tools, and both commonsense and hard-logic evaluation.
 
 Run the configured harness non-interactively over the configured split and
 evaluate each output:
@@ -116,7 +122,7 @@ python agent_env/scripts/solve_script_with_harness.py
 Use a specific query or override the configured model from the CLI:
 
 ```bash
-python agent_env/scripts/solve_script_with_harness.py --uid <uid>
+python agent_env/scripts/solve_script_with_harness.py --lang en --uid <uid>
 python agent_env/scripts/solve_script_with_harness.py --harness opencode --model dashscope/qwen3.6-27b
 python agent_env/scripts/solve_script_with_harness.py --harness codex --model gpt-5.5
 python agent_env/scripts/solve_script_with_harness.py --resume
@@ -148,7 +154,7 @@ JSONL events, and extract final text into `output.txt`; Codex runs use
 Start the local server:
 
 ```bash
-python -m agent_env.http_server --host 127.0.0.1 --port 8765
+python -m agent_env.http_server --lang en --host 127.0.0.1 --port 8765
 ```
 
 List tools:
@@ -162,7 +168,7 @@ Call a tool:
 ```bash
 curl -X POST http://127.0.0.1:8765/call \
   -H 'Content-Type: application/json' \
-  -d '{"tool":"attractions_keys","arguments":{"city":"上海"}}'
+  -d '{"tool":"attractions_keys","arguments":{"city":"Shanghai"}}'
 ```
 
 Call the original command-string interface:
@@ -170,7 +176,7 @@ Call the original command-string interface:
 ```bash
 curl -X POST http://127.0.0.1:8765/world-command \
   -H 'Content-Type: application/json' \
-  -d '{"command":"attractions_keys(\"上海\")"}'
+  -d '{"command":"attractions_keys(\"Shanghai\")"}'
 ```
 
 ## Boundary
