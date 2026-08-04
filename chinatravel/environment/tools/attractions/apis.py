@@ -8,6 +8,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from poi.apis import Poi
+from chinatravel.environment.concept_labels import normalize_concept_value
 from chinatravel.environment.language import CITY_SLUGS, city_names, normalize_lang, relative_database_path
 
 
@@ -31,6 +32,12 @@ class Attractions:
         self.data = {}
         for i, city in enumerate(city_list):
             self.data[city] = pd.read_csv(data_path_list[i])
+            if self.lang == "en":
+                self.data[city]["type"] = self.data[city]["type"].map(
+                    lambda value: normalize_concept_value(
+                        "attraction", value, self.lang
+                    )
+                )
         self.key_type_tuple_list_map = {}
         for city in city_list:
             self.key_type_tuple_list_map[city] = []

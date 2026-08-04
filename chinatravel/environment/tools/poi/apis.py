@@ -16,7 +16,8 @@ class Poi:
         ]
         self.data = {}
         for i, city in enumerate(city_list):
-            self.data[city] = json.load(open(data_path_list[i], "r", encoding="utf-8"))
+            with open(data_path_list[i], "r", encoding="utf-8") as file:
+                self.data[city] = json.load(file)
             city_data = {}
             for name_pos in self.data[city]:
                 name = name_pos["name"]

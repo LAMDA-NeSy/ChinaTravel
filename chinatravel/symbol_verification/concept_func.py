@@ -1,52 +1,15 @@
 from chinatravel.environment.tools.accommodations.apis import Accommodations
 from chinatravel.environment.tools.restaurants.apis import Restaurants
 from chinatravel.environment.tools.attractions.apis import Attractions
+from chinatravel.environment.concept_labels import (
+    ENGLISH_CONCEPT_LITERAL_ALIASES,
+    normalize_concept_value as normalize_sandbox_concept_value,
+)
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
 
 
 _current_lang = "zh"
 _TOOLS_BY_LANG = {}
-_CONCEPT_VALUE_ALIASES = {
-    "attraction": {
-        "Art Museum": "Art museum",
-        "Cultural Attractions": "Cultural Landscape",
-        "Historical Site": "historical site",
-        "Natural Scenery": "natural scenery",
-        "Park": "park",
-        "red tourism sites": "Red tourism sites",
-        "university campus": "University campus",
-    },
-    "restaurant": {
-        "Bread and Desserts": "Bakery and Desserts",
-        "cafe": "coffee shop",
-        "Fast food and simple meals": "Fast food and casual dining",
-        "hot pot": "Hot pot",
-    },
-    "accommodation": {
-        "Air Purifier": "Air purifier",
-        "Bed and Breakfast": "homestay",
-        "Bed and breakfast": "homestay",
-        "Designer Hotel": "Designer hotel",
-        "Family Theme Room": "Family-themed room",
-        "Family-themed Room": "Family-themed room",
-        "Great View from the Window": "Great view from the window",
-        "Scenic Window View": "Great view from the window",
-        "Instagrammable swimming pool": "Instagrammable pool",
-        "Chess and Card Room": "Mahjong and Card Game Room",
-        "Mahjong and Card Room": "Mahjong and Card Game Room",
-        "Serviced Apartment": "Hotel Apartment",
-        "small but beautiful": "small and beautiful",
-        "SPA": "Spa",
-        "Stunning night views": "Stunning Night Views",
-        "Swimming pool": "Swimming Pool",
-        "viral swimming pool": "Instagrammable pool",
-    },
-}
-_CONCEPT_LITERAL_ALIASES = {
-    alias: canonical
-    for aliases in _CONCEPT_VALUE_ALIASES.values()
-    for alias, canonical in aliases.items()
-}
 _POI_NAME_ALIASES = {
     "Bistro Sola": "Sola Bistro",
 }
@@ -75,9 +38,7 @@ def set_concept_func_lang(lang=None):
 
 
 def normalize_concept_value(kind, value):
-    if not isinstance(value, str):
-        return value
-    return _CONCEPT_VALUE_ALIASES.get(kind, {}).get(value, value)
+    return normalize_sandbox_concept_value(kind, value, _current_lang)
 
 
 def normalize_poi_name(value):
@@ -90,7 +51,9 @@ def normalize_concept_constraint_source(source):
     if not isinstance(source, str):
         return source
     normalized = source
-    for alias, canonical in {**_CONCEPT_LITERAL_ALIASES, **_POI_NAME_ALIASES}.items():
+    aliases = dict(ENGLISH_CONCEPT_LITERAL_ALIASES)
+    aliases.update(_POI_NAME_ALIASES)
+    for alias, canonical in aliases.items():
         for quote in ("'", '"'):
             normalized = normalized.replace(
                 f"{quote}{alias}{quote}", f"{quote}{canonical}{quote}"
@@ -206,7 +169,8 @@ def innercity_transport_cost(transports, node=None):
     """
     cost = 0
     for transport in transports:
-        if node is None or transport.get("type") == node:
+        transport_mode = transport.get("mode", transport.get("type"))
+        if node is None or transport_mode == node:
             cost += transport.get("cost", 0)
     return cost
 
@@ -229,7 +193,8 @@ def innercity_transport_distance(transports, mode=None):
     """
     distance = 0
     for transport in transports:
-        if mode is None or transport.get("type") == mode:
+        transport_mode = transport.get("mode", transport.get("type"))
+        if mode is None or transport_mode == mode:
             distance += transport.get("distance", 0)
     return distance
 
@@ -244,7 +209,11 @@ def innercity_transport_time(transports, mode=None):
 
     time_cost = 0
     for transport in transports:
-        time_cost += calc_time_delta(transport["end_time"], transport["start_time"])
+        transport_mode = transport.get("mode", transport.get("type"))
+        if mode is None or transport_mode == mode:
+            time_cost += calc_time_delta(
+                transport["end_time"], transport["start_time"]
+            )
     return time_cost
 
 def metro_tickets(transports):
