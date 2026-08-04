@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from typing import Any
 
@@ -97,6 +98,12 @@ def run_repl(adapter: ChinaTravelEnvAdapter) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Call ChinaTravel agent environment tools.")
+    parser.add_argument(
+        "--lang",
+        choices=["zh", "en"],
+        default=os.environ.get("CHINATRAVEL_LANG", "zh"),
+        help="Sandbox/query language. Defaults to CHINATRAVEL_LANG or zh.",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("tools", help="List available tools.")
@@ -116,7 +123,7 @@ def main() -> None:
     world_parser.add_argument("world_command", help="WorldEnv command string.")
 
     args = parser.parse_args()
-    adapter = ChinaTravelEnvAdapter()
+    adapter = ChinaTravelEnvAdapter(lang=args.lang)
 
     try:
         if args.command is None or args.command == "repl":

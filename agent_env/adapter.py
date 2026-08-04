@@ -20,6 +20,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PAGE_SIZE = 10
 
 
+def _normalize_adapter_lang(lang: str | None = None) -> str:
+    value = str(lang or os.environ.get("CHINATRAVEL_LANG") or "zh").lower()
+    if value not in {"zh", "en"}:
+        raise ValueError("ChinaTravel language must be 'zh' or 'en'.")
+    return value
+
+
 def _ensure_project_on_path() -> None:
     root = str(PROJECT_ROOT)
     if root not in sys.path:
@@ -104,7 +111,12 @@ def _schema(required: list[str], properties: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-CITY = {"type": "string", "description": "Chinese city name, e.g. 上海, 北京"}
+CITY = {
+    "type": "string",
+    "description": (
+        "City name in the selected sandbox language, e.g. Shanghai for en or 上海 for zh"
+    ),
+}
 POINT = {"type": "string", "description": "POI name; must match ChinaTravel data"}
 TIME = {"type": "string", "description": "HH:MM"}
 TOPK = {"type": "integer", "default": 10, "minimum": 1}
@@ -289,7 +301,8 @@ TOOL_SPECS: dict[str, ToolSpec] = {
 
 
 class ChinaTravelEnvAdapter:
-    def __init__(self) -> None:
+    def __init__(self, lang: str | None = None) -> None:
+        self.lang = _normalize_adapter_lang(lang)
         self._env: Any | None = None
 
     def list_tools(self) -> list[dict[str, Any]]:
@@ -357,7 +370,11 @@ class ChinaTravelEnvAdapter:
             _ensure_project_on_path()
             from chinatravel.data.load_datasets import load_query
 
-            args = argparse.Namespace(splits=split, oracle_translation=oracle_translation)
+            args = argparse.Namespace(
+                splits=split,
+                oracle_translation=oracle_translation,
+                lang=self.lang,
+            )
             query_ids, query_data = load_query(args)
             if uid is not None:
                 if uid not in query_data:
@@ -382,7 +399,7 @@ class ChinaTravelEnvAdapter:
             _ensure_project_on_path()
             from chinatravel.environment.world_env import WorldEnv
 
-            self._env = WorldEnv()
+            self._env = WorldEnv(lang=self.lang)
         return self._env
 
     def _env_output_to_dict(self, output: Any, *, command: str) -> dict[str, Any]:
@@ -403,4 +420,3 @@ class ChinaTravelEnvAdapter:
 
 def dumps_result(result: dict[str, Any]) -> str:
     return json.dumps(result, ensure_ascii=False, indent=2)
-

@@ -16,10 +16,10 @@ structured tool catalog does not cover the lookup.
 Run commands from the repository root:
 
 ```bash
-python -m agent_env.cli tools
-python -m agent_env.cli splits
-python -m agent_env.cli call <tool_name> '<json_arguments>'
-python -m agent_env.cli world "<WorldEnv command>"
+python -m agent_env.cli --lang en tools
+python -m agent_env.cli --lang en splits
+python -m agent_env.cli --lang en call <tool_name> '<json_arguments>'
+python -m agent_env.cli --lang en world "<WorldEnv command>"
 ```
 
 The CLI returns JSON. Check `success` before relying on `data`.
@@ -29,45 +29,45 @@ The CLI returns JSON. Check `success` before relying on `data`.
 List query splits:
 
 ```bash
-python -m agent_env.cli call china_travel_list_splits
+python -m agent_env.cli --lang en call china_travel_list_splits
 ```
 
 Load query metadata:
 
 ```bash
-python -m agent_env.cli call china_travel_load_query '{"split":"easy"}'
-python -m agent_env.cli call china_travel_load_query '{"split":"easy","uid":"<uid>"}'
+python -m agent_env.cli --lang en call china_travel_load_query '{"split":"easy"}'
+python -m agent_env.cli --lang en call china_travel_load_query '{"split":"easy","uid":"<uid>"}'
 ```
 
 Inspect available columns:
 
 ```bash
-python -m agent_env.cli call attractions_keys '{"city":"上海"}'
-python -m agent_env.cli call restaurants_keys '{"city":"上海"}'
-python -m agent_env.cli call accommodations_keys '{"city":"上海"}'
+python -m agent_env.cli --lang en call attractions_keys '{"city":"Shanghai"}'
+python -m agent_env.cli --lang en call restaurants_keys '{"city":"Shanghai"}'
+python -m agent_env.cli --lang en call accommodations_keys '{"city":"Shanghai"}'
 ```
 
 Filter resources:
 
 ```bash
-python -m agent_env.cli call attractions_select '{"city":"上海","key":"name","op":"contains","value":"博物馆"}'
-python -m agent_env.cli call restaurants_select '{"city":"上海","key":"cuisine","op":"eq","value":"本帮江浙菜"}'
-python -m agent_env.cli call accommodations_select '{"city":"上海","key":"price","op":"le","value":500}'
+python -m agent_env.cli --lang en call attractions_select '{"city":"Shanghai","key":"name","op":"contains","value":"Museum"}'
+python -m agent_env.cli --lang en call restaurants_select '{"city":"Shanghai","key":"cuisine","op":"contains","value":"Chinese"}'
+python -m agent_env.cli --lang en call accommodations_select '{"city":"Shanghai","key":"price","op":"le","value":500}'
 ```
 
 Find nearby resources:
 
 ```bash
-python -m agent_env.cli call attractions_nearby '{"city":"上海","point":"上海迪士尼度假区","topk":5,"dist":5}'
-python -m agent_env.cli call restaurants_nearby '{"city":"上海","point":"上海迪士尼度假区","topk":5,"dist":2}'
-python -m agent_env.cli call accommodations_nearby '{"city":"上海","point":"上海迪士尼度假区","topk":5,"dist":5}'
+python -m agent_env.cli --lang en call attractions_nearby '{"city":"Shanghai","point":"Shanghai Disneyland","topk":5,"dist":5}'
+python -m agent_env.cli --lang en call restaurants_nearby '{"city":"Shanghai","point":"Shanghai Disneyland","topk":5,"dist":2}'
+python -m agent_env.cli --lang en call accommodations_nearby '{"city":"Shanghai","point":"Shanghai Disneyland","topk":5,"dist":5}'
 ```
 
 Check transport:
 
 ```bash
-python -m agent_env.cli call intercity_transport_select '{"start_city":"北京","end_city":"上海","intercity_type":"train","earliest_leave_time":"07:00"}'
-python -m agent_env.cli call goto '{"city":"上海","start":"上海站","end":"上海迪士尼度假区","start_time":"09:00","transport_type":"metro"}'
+python -m agent_env.cli --lang en call intercity_transport_select '{"start_city":"Beijing","end_city":"Shanghai","intercity_type":"train","earliest_leave_time":"07:00"}'
+python -m agent_env.cli --lang en call goto '{"city":"Shanghai","start":"Shanghai Railway Station","end":"Shanghai Disneyland","start_time":"09:00","transport_type":"metro"}'
 ```
 
 Use the exact values returned by the tools for prices, IDs, names, times,
@@ -102,18 +102,18 @@ Use the bundled harness to load a configured split, call a harness non-interacti
 save plans under `results/<method>/<uid>.json`, and evaluate them:
 
 ```bash
-python agent_env/scripts/solve_script_with_harness.py --split easy
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy
 ```
 
 Useful options:
 
 ```bash
-python agent_env/scripts/solve_script_with_harness.py --split easy --uid <uid>
-python agent_env/scripts/solve_script_with_harness.py --split easy --harness opencode --model dashscope/qwen3.6-27b
-python agent_env/scripts/solve_script_with_harness.py --split easy --harness codex --model gpt-5.5
-python agent_env/scripts/solve_script_with_harness.py --split easy --timeout 900
-python agent_env/scripts/solve_script_with_harness.py --split easy --limit 1
-python agent_env/scripts/solve_script_with_harness.py --split easy --no-run-harness
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy --uid <uid>
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy --harness opencode --model dashscope/qwen3.6-27b
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy --harness codex --model gpt-5.5
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy --timeout 900
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy --limit 1
+python agent_env/scripts/solve_script_with_harness.py --lang en --split easy --no-run-harness
 ```
 
 The harness hides oracle verifier fields from the selected model, but keeps them

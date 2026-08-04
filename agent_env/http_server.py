@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -55,11 +56,18 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    global ADAPTER
     parser = argparse.ArgumentParser(description="Run ChinaTravel agent HTTP environment.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--lang",
+        choices=["zh", "en"],
+        default=os.environ.get("CHINATRAVEL_LANG", "zh"),
+    )
     args = parser.parse_args()
 
+    ADAPTER = ChinaTravelEnvAdapter(lang=args.lang)
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"ChinaTravel agent HTTP env listening on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()
@@ -67,4 +75,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

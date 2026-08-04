@@ -1,5 +1,6 @@
 [run]
 split = "easy"
+lang = "en"
 harness = "opencode"
 method = ""
 work_dir = ""
