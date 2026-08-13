@@ -1,277 +1,297 @@
-<center>
-  <h1> [ICLR'26] ChinaTravel: A Real-World Benchmark for Language Agents in Chinese Travel Planning
-</h1>
-</center>
+# ChinaTravel
 
-Official codebase for the paper "ChinaTravel: A Real-World Benchmark for Language Agents in Chinese Travel Planning".
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-<!-- | [Webpage](https://www.lamda.nju.edu.cn/shaojj/chinatravel/) | [Paper](https://arxiv.org/abs/2412.13682) | [Dataset(Huggingface)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)| -->
+**ChinaTravel: An Open-Ended Travel Planning Benchmark with Compositional
+Constraint Validation for Language Agents** (ICLR 2026)
+
+ChinaTravel is a real-world travel-planning benchmark for language agents. It
+combines structured sandbox data, natural-language requests, executable DSL
+constraints, commonsense validation, and preference-based scoring.
 
 [![Webpage](https://img.shields.io/badge/Webpage-Visit-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
 [![Paper](https://img.shields.io/badge/Paper-View-red)](https://arxiv.org/abs/2412.13682)
-[![Dataset(Huggingface)](https://img.shields.io/badge/Dataset-Huggingface-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
-[![Competition(TPC@IJCAI2025)](https://img.shields.io/badge/IJCAI%20Competition-TPC@IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
-[![Competition(TPC@AIC2025)](https://img.shields.io/badge/AIC%20Competition-TPC@AIC2025-green)](TPC@AIC2025/readme.md)
-[![Competition(TPC@IJCAI2026)](https://img.shields.io/badge/IJCAI%20Competition-TPC@IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
+[![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![TPC@IJCAI2026](https://img.shields.io/badge/Competition-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
+## Post-Competition Release
 
-<!-- 
-![Overview](images/overview.png) -->
+This branch consolidates the engineering work completed during and after
+TPC@IJCAI 2026:
 
-## 🏆 IJCAI 2026 Travel Planning Challenge (TPC@IJCAI)
+- a refactored OpenAI-compatible model runtime supporting Chat Completions and
+  the Responses API;
+- explicit Chinese and English query/sandbox selection through `--lang zh` and
+  `--lang en`;
+- the final evaluator fixes for entity grounding, activity chronology,
+  transport validation, meal counting, hard-logic execution, invalid-plan
+  scoring, deterministic data loading, and evaluation caches;
+- the modular synthetic-query generator, constraint catalog, audit pipeline,
+  and release exporter;
+- the Chinese-to-English DSL/query translation, rule and LLM audit, selective
+  repair, conservative re-audit, and human-adjudication tools;
+- a reproducible exporter for canonicalized English sandbox data.
 
-We are proud to announce that ChinaTravel has been selected as the official benchmark for the **Travel Planning Challenge (TPC) @ IJCAI 2026**!
+Generated competition data, private test splits, API credentials, and local
+model outputs are not committed to this branch.
 
-**Official Competition Website**:
-[https://chinatravel-competition.github.io/IJCAI2026/](https://chinatravel-competition.github.io/IJCAI2026/)
+## Repository Map
 
-Participants are invited to develop novel agentic system that can tackle real-world travel planning scenarios under practical requirements. This competition will showcase state-of-the-art approaches in agentic AI research.
+| Path | Purpose |
+| --- | --- |
+| `chinatravel/` | Core agents, bilingual sandbox, DSL, and evaluators |
+| `agent_env/` | Structured tools, CLI/HTTP/MCP adapters, and split harness |
+| `synthetic_query_generation/` | Synthetic query generation and independent audit |
+| `scripts/` | Translation, repair, and fixed-sandbox export utilities |
+| `tests/` | Regression tests for evaluator, language, DSL, and data tools |
+| `run_exp.py`, `run_tpc.py` | Agent execution entrypoints |
+| `eval_exp.py`, `eval_tpc.py` | Standard and TPC evaluation entrypoints |
 
+## Installation
 
-## 🏆 IJCAI 2025 Travel Planning Challenge (TPC@IJCAI)
+Python 3.12 or newer is required by `pyproject.toml`.
 
-We are proud to announce that ChinaTravel has been selected as the official benchmark for the **Travel Planning Challenge (TPC) @ IJCAI 2025**!
+With `uv`:
 
-**Official Competition Website**:
-[https://chinatravel-competition.github.io/IJCAI2025/](https://chinatravel-competition.github.io/IJCAI2025/)
+```bash
+uv sync
+source .venv/bin/activate
+```
 
-Participants are invited to develop novel agents that can tackle real-world travel planning scenarios under complex constraints. This competition will showcase state-of-the-art approaches in language agent research.
-
-## 📝 ChangeLog
-
-### 2025.09
-1. Upload the champion solution of TPC@IJCAI2025 DSL track. Thanks the [@evergreenee](https://github.com/evergreenee) for their contributions.  
-
-
-### 2025.06
-
-1. Fix error collection in the evaluation code of commonsense. 
-2. Fix pure-neuro agent's pipeline
-3. Fix load_datasets from huggingface
-4. Update exception handling in syntax verification
-
-
-### 2025.05
-
-1. Update logs for the latest version.
-2. Provide the evaluation code for the TPC.
-
-### 2025.04
-
-1. Added local data loader. Users can now load custom queries locally. When specifying non-default splits_name values (e.g., "abc") for "run_exp.py", the system will automatically load corresponding files from evaluation/default_splits/abc.txt, where the TXT file contains the target query filenames.
-2. Detailed constraints classification. See detailed docs at [Evaluation README](chinatravel/symbol_verification/readme.md)
-3. Introduced LLM-modulo baseline
-   Implement the LLM-modulo pipeline with a ground-truth symbolic verifier.
-   Based on methodology from:
-   Paper: Robust Planning with Compound LLM Architectures: An LLM-Modulo Approach
-   Codebase: https://github.com/Atharva-Gundawar/LLM-Modulo-prompts
-4. Support configurable LLM inference.
-
-## 🚀 Quick Start
-
-### ⚙️ Setup
-
-1. Create a conda environment and install dependencies:
+Or with Conda and pip:
 
 ```bash
 conda create -n chinatravel python=3.12
-conda activate chinatravel  
-pip install -r requirements.txt  
+conda activate chinatravel
+pip install -r requirements.txt
 ```
 
-2. Download the database and unzip it to the "chinatravel/environment/" directory
+Download the official sandbox data from [Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU)
+or [NJU Drive](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/), then place it as:
 
-Download Links: [Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU), [NJU Drive](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/)
+```text
+chinatravel/environment/database/       # Chinese sandbox
+chinatravel/environment/database_en/    # English sandbox
+```
 
-3. Configure an OpenAI-compatible model endpoint.
+The requested language must exist locally. The standard run/evaluation scripts
+default to Chinese for backward compatibility; pass `--lang en` explicitly for
+English data.
 
-ChinaTravel no longer requires local model weights or tokenizer downloads. Set
-the API key and optional base URL for the endpoint you want to use:
+## Model Runtime
+
+ChinaTravel accepts built-in aliases such as `deepseek`, `gpt-4o`, and
+`glm4-plus`, or any model exposed through an OpenAI-compatible endpoint.
 
 ```bash
-export OPENAI_API_KEY=""
-# Optional for OpenAI-compatible providers:
+export OPENAI_API_KEY="your-key"
 export OPENAI_BASE_URL="https://your-provider.example/v1"
-# Optional: chat for OpenAI-compatible Chat Completions endpoints,
-# or responses for the OpenAI Responses API.
+
+# chat: OpenAI-compatible Chat Completions (default)
+# responses: OpenAI Responses API
 export CHINATRAVEL_OPENAI_WIRE_API="chat"
-# Optional when a provider uses a different token limit field:
+
+# Optional provider-specific token field.
 export CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG="max_tokens"
-# Optional while debugging provider integration:
-export CHINATRAVEL_OPENAI_RAISE_ERRORS=1
-# Optional when exporting strict OpenAI tool schemas from agent_env:
-export CHINATRAVEL_OPENAI_STRICT_TOOLS=1
 ```
 
-### ▶️ Running
+Additional runtime variables include:
 
-The `--llm` value can be a built-in alias (`deepseek`, `gpt-4o`, `glm4-plus`) or
-any model name served by an OpenAI-compatible endpoint. Alias and
-provider-prefix matching is case-insensitive; the actual model id is preserved.
+- `CHINATRAVEL_OPENAI_MODEL`: default model when `--llm` is omitted;
+- `CHINATRAVEL_OPENAI_API_KEY`: key override before `OPENAI_API_KEY`;
+- `CHINATRAVEL_OPENAI_BASE_URL`: base URL override before `OPENAI_BASE_URL`;
+- `CHINATRAVEL_OPENAI_RAISE_ERRORS=1`: surface provider errors while debugging;
+- `CHINATRAVEL_OPENAI_STRICT_TOOLS=1`: export strict OpenAI tool schemas.
+
+Responses mode requires `openai>=1.66.0`. API keys must remain in environment
+variables or ignored local configuration files.
+
+## Running Agents
+
+Run an English or Chinese split:
 
 ```bash
-export OPENAI_API_KEY=""
+python run_exp.py \
+  --splits easy \
+  --agent LLMNeSy \
+  --llm provider/model-name \
+  --lang en
 
-python run_exp.py --splits easy --agent LLMNeSy --llm provider/model-name --oracle_translation
-python run_exp.py --splits medium --agent LLMNeSy --llm provider/model-name --oracle_translation
-python run_exp.py --splits human --agent LLMNeSy --llm provider/model-name --oracle_translation
-
-python run_exp.py --splits human --agent LLMNeSy --llm provider/model-name
-
-python run_exp.py --splits human --agent LLM-modulo --llm provider/model-name --refine_steps 10 --oracle_translation
+python run_exp.py \
+  --splits easy \
+  --agent LLMNeSy \
+  --llm provider/model-name \
+  --lang zh
 ```
 
-**Note**:
-
-- Query records are expected to use the fixed data format. In particular,
-  `hard_logic_py` must already be a list when present; the loader validates the
-  shape and does not patch older string-encoded annotations.
-- The `--oracle_translation` flag enables access to annotated ground truth including:
-
-  - `hard_logic_py`: Executable verification DSL code
-  - `hard_logic_nl`: The corresponding constraint descriptions
-  - Example annotation structure:
-
-  ```python
-  {
-    "hard_logic_py": [
-      "
-      total_cost=0 
-      for activity in allactivities(plan):
-          total_cost+=activity_cost(activity)
-              total_cost += innercity_transport_cost(activity_transports(activity))
-      result=(total_cost<=1000)
-      ", 
-      "
-      innercity_transport_set=set()
-      for activity in allactivities(plan):
-          if activity_transports(activity)!=[]:              
-              innercity_transport_set.add(innercity_transport_type(activity_transports(activity)))
-      result=(innercity_transport_set<={'taxi'})
-      "
-    ], 
-    "hard_logic_nl": ["总预算为1800元", "市内交通选择taxi"], 
-  }
-  ```
-- LLM-modulo method **requires** oracle_translation mode for its symbolic refinement process
-
-### 📊 Evaluation
+To expose oracle annotations to an algorithm that explicitly requires them:
 
 ```bash
-python eval_exp.py --splits human --method all --llm provider/model-name
-python eval_exp.py --splits human --method LLMNeSy_provider_model-name_oracletranslation
-python eval_exp.py --splits human --method LLMNeSy_provider_model-name
-python eval_exp.py --splits human --method LLM-modulo_provider_model-name_10steps_oracletranslation
-
+python run_exp.py \
+  --splits human \
+  --agent LLM-modulo \
+  --llm provider/model-name \
+  --refine_steps 10 \
+  --oracle_translation \
+  --lang en
 ```
 
-In TPC@IJCAI2025, the evaluation code is provided in the `eval_tpc.py` file. You can run the evaluation code as follows:
+`--oracle_translation` exposes `hard_logic_py` and `hard_logic_nl`. Normal
+participant-facing runs should omit it. Query files must use the current JSON
+schema; when present, `hard_logic_py` must be a JSON list rather than a
+string-encoded list.
+
+Results are written under `results/<method>/`.
+
+## Evaluation
+
+Evaluate a generated result directory with the same language as the query and
+sandbox data:
 
 ```bash
-python eval_tpc.py --splits tpc_phase1 --method YOUR_METHOD_NAME
+python eval_exp.py --splits human --method YOUR_METHOD --lang en
+python eval_tpc.py --splits tpc_phase1 --method YOUR_METHOD --lang en
 ```
 
-## 📚 Docs
+The TPC evaluator reports schema, commonsense, hard-constraint, FPR, and
+preference metrics. Plans that fail required validity checks contribute zero to
+the affected preference average; preference scores are not a bypass for an
+invalid itinerary.
 
-[Environment](chinatravel/environment/readme.md)
-[Constraints](chinatravel/symbol_verification/readme.md)
-[Agent Environment](agent_env/README.md)
+The hardened evaluator additionally enforces:
 
-## 🛠️ Advanced Development
+- database grounding for referenced entities and transports;
+- chronological, non-overlapping activities and valid transport departure
+  ordering;
+- valid intercity transport placement and type-independent position handling;
+- at most one hotel breakfast per day for the free-breakfast exception;
+- canonical bilingual concept values and temporary legacy aliases;
+- safe DSL execution and legacy apostrophe normalization.
 
-### 1. Develop Your Own Agent Algorithm
+## Agent Environment and Harness
 
-To develop your own agent algorithm, inherit the `BaseAgent` class from
-`chinatravel/agent/base.py` and register a lazy builder in
-`chinatravel/agent/load_model.py`. We provide an empty agent example named
-`TPCAgent`.
-
-Steps:
-
-- **Inherit the `BaseAgent` class**: Create a new Python file in the `chinatravel/agent` directory and define your own agent class, inheriting from `BaseAgent`.
-
-```python:chinatravel/agent/your_agent.py
-from .base import BaseAgent
-
-class YourAgent(BaseAgent):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # Initialization logic
-
-    def act(self, observation):
-        # Implement the decision - making logic of the agent
-        pass
-```
-
-- **Register an agent builder**: Open `chinatravel/agent/load_model.py`, add a
-  small builder function, and register it in `AGENT_BUILDERS`.
-
-```python:
-def _build_your_agent(kwargs):
-    from .your_agent import YourAgent
-
-    return YourAgent(**kwargs)
-
-
-AGENT_BUILDERS = {
-    # ... existing builders ...
-    "YourMethodName": _build_your_agent,
-}
-```
-
-### 2. Use Your Own Model
-
-To use your own model, expose it through an OpenAI-compatible Chat Completions
-endpoint or the OpenAI Responses API. You do not need to add a new Python class
-or edit `init_llm`.
+`agent_env` exposes ChinaTravel through structured Python, CLI, HTTP, MCP, Chat
+Completions tool-call, and Responses function-call interfaces.
 
 ```bash
-export OPENAI_API_KEY=""
-export OPENAI_BASE_URL="https://your-provider.example/v1"
-export CHINATRAVEL_OPENAI_WIRE_API="chat"
-export CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG="max_tokens"
-export CHINATRAVEL_OPENAI_RAISE_ERRORS=1
-python run_exp.py --splits easy --agent LLMNeSy --llm your-model-name
+python -m agent_env --lang en tools
+python -m agent_env --lang en call attractions_keys '{"city":"Shanghai"}'
+CHINATRAVEL_LANG=en python -m agent_env.mcp_stdio
 ```
 
-For the OpenAI Responses API, set `CHINATRAVEL_OPENAI_WIRE_API=responses`.
-The default token limit argument then becomes `max_output_tokens`; override
-`CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG` only if your provider expects another field.
-Responses mode requires `openai>=1.66.0`; Chat Completions mode remains the
-default for broad OpenAI-compatible provider support.
-
-Provider/model prefixes are also accepted when the provider alias is known, for
-example `deepseek/deepseek-chat`. Built-in aliases are defined in
-`chinatravel/agent/llms.py`.
-
-### 3. Run Your Code Using Experiment Scripts
-
-After completing the above development, you can use the experiment scripts to run your code.
-
-Example of running:
+For split-level harness execution:
 
 ```bash
-python run_tpc.py --splits easy --agent TPCAgent --llm rule
-python run_exp.py --splits easy --agent YourMethodName --llm your-model-name
+cp agent_env/config.toml.example agent_env/config.toml
+python agent_env/scripts/solve_script_with_harness.py
 ```
 
-The results will be saved in the `results/YourMethodName_YourLLMName_xxx` directory, e.g., `results/TPCAgent_rule`.
+The tracked example defaults to English. The local `config.toml` is ignored
+because it may contain provider credentials. See the
+[Agent Environment guide](agent_env/README.md) for OpenCode, Codex, resume,
+output, HTTP, and MCP details.
 
-## ✉️ Contact
+## Synthetic Query Generation
 
-If you have any problems, please contact [Jie-Jing Shao](shaojj@lamda.nju.edu.cn), [Bo-Wen Zhang](221900200@smail.nju.edu.cn), [Xiao-Wen Yang](yangxw@lamda.nju.edu.cn).
+The generator samples executable constraints only from already valid seed
+plans, validates every candidate, validates the final combination again, and
+writes an auditable manifest.
 
-## 📌 Citation
+```bash
+python -m synthetic_query_generation seed-queries \
+  --output-dir /tmp/chinatravel_seed_queries \
+  --num-records 100 \
+  --lang en \
+  --seed 2026
 
-If our paper or related resources prove valuable to your research, we kindly ask for citation.
+python -m synthetic_query_generation from-plans \
+  --plans-dir results/seed_planner \
+  --output-dir /tmp/chinatravel_synthetic \
+  --num-records 100 \
+  --lang en \
+  --seed 2026 \
+  --copy-seed-plans
 
+python -m synthetic_query_generation.audit \
+  --dataset-dir /tmp/chinatravel_synthetic \
+  --expected-records 100 \
+  --profile full \
+  --lang en
 ```
-@inproceedings{
-shao2026chinatravel,
-title={ChinaTravel: An Open-Ended Travel Planning Benchmark with Compositional Constraint Validation for Language Agents},
-author={Jie-Jing Shao and Bo-Wen Zhang and Xiao-Wen Yang and Baizhi Chen and Siyu Han and Pang Jinghao and Wen-Da Wei and Guohao Cai and Zhenhua Dong and Lan-Zhe Guo and Yu-Feng Li},
-booktitle={The Fourteenth International Conference on Learning Representations},
-year={2026},
-url={https://openreview.net/forum?id=0YRVlxY9BH}
+
+Constraint families and individual template keys can be enabled, disabled, or
+prioritized independently. See [Synthetic Query Generation](synthetic_query_generation/README.md).
+
+## Translation and Data Repair
+
+The translation pipeline supports OpenAI-compatible Chat Completions APIs,
+custom `base_url`, headers, model parameters, concurrency, and top-level
+`extra_body` request fields. It combines deterministic checks with LLM review
+and changes only records selected by the configured audit policy.
+
+```bash
+cp translation_api_config.example.json translation_api_config.json
+export TRANSLATION_API_KEY="your-key"
+
+python scripts/build_translation_assets.py
+python scripts/audit_phase1_translations.py
+python scripts/repair_phase1_translations.py
+```
+
+See [Translation and Audit Pipeline](scripts/TRANSLATION_PIPELINE.md).
+
+To export canonicalized English sandbox data without modifying the source:
+
+```bash
+python scripts/export_fixed_sandbox.py /tmp/ChinaTravel_sandbox_en_fixed \
+  --archive /tmp/ChinaTravel_sandbox_en_fixed.zip
+```
+
+The archive contains a manifest, change report, and checksums. See
+[Fixed Sandbox Export](scripts/SANDBOX_EXPORT.md).
+
+## Tests
+
+```bash
+python -m unittest discover -s tests -p 'test_*.py' -v
+python -m compileall -q chinatravel agent_env scripts synthetic_query_generation tests
+```
+
+The regression suite covers bilingual propagation, query resolution, evaluator
+grounding and scoring, chronology, meal limits, performance caches, safe DSL
+control flow, synthetic constraints, and translation repair.
+
+## Documentation
+
+- [Chinese README / 中文说明](README.zh-CN.md)
+- [Environment](chinatravel/environment/readme.md)
+- [Constraint verification](chinatravel/symbol_verification/readme.md)
+- [Agent environment](agent_env/README.md)
+- [Synthetic query generation](synthetic_query_generation/README.md)
+- [Translation and audit](scripts/TRANSLATION_PIPELINE.md)
+- [Fixed sandbox export](scripts/SANDBOX_EXPORT.md)
+- [Post-competition release validation](docs/RELEASE_VALIDATION.md)
+- [TPC@AIC 2025](TPC@AIC2025/readme.md)
+
+## Competition Archives
+
+- [TPC@IJCAI 2026](https://chinatravel-competition.github.io/IJCAI2026/)
+- [TPC@IJCAI 2025](https://chinatravel-competition.github.io/IJCAI2025/)
+
+## Contact
+
+For questions, contact [Jie-Jing Shao](mailto:shaojj@lamda.nju.edu.cn),
+[Bo-Wen Zhang](mailto:221900200@smail.nju.edu.cn), or
+[Xiao-Wen Yang](mailto:yangxw@lamda.nju.edu.cn).
+
+## Citation
+
+```bibtex
+@inproceedings{shao2026chinatravel,
+  title     = {ChinaTravel: An Open-Ended Travel Planning Benchmark with Compositional Constraint Validation for Language Agents},
+  author    = {Jie-Jing Shao and Bo-Wen Zhang and Xiao-Wen Yang and Baizhi Chen and Siyu Han and Pang Jinghao and Wen-Da Wei and Guohao Cai and Zhenhua Dong and Lan-Zhe Guo and Yu-Feng Li},
+  booktitle = {The Fourteenth International Conference on Learning Representations},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=0YRVlxY9BH}
 }
 ```

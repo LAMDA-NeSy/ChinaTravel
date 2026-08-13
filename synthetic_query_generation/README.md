@@ -1,5 +1,7 @@
 # Synthetic Query Generation
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 This folder contains an experimental pipeline for generating harder ChinaTravel
 queries from already valid seed plans.
 

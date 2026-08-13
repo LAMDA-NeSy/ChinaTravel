@@ -1,5 +1,7 @@
 # ChinaTravel Agent Environment
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 This directory wraps the existing ChinaTravel environment for agent runtimes without
 modifying the benchmark package. Official running and evaluation scripts such as
 `run_exp.py`, `eval_exp.py`, and `eval_tpc.py` remain the source of truth.
@@ -103,17 +105,27 @@ Edit `agent_env/config.toml` to set the split, language, harness, smoke-test lim
 models, providers, and API key or API key env var. The local config is ignored
 by git because it may contain a secret.
 
-Keep `lang = "en"` for the English competition data. This setting is applied to
+Keep `lang = "en"` for English data. This setting is applied to
 query loading, environment tools, and both commonsense and hard-logic evaluation.
 
-Run the configured harness non-interactively over the configured split and
-evaluate each output:
+Important `[run]` fields are:
 
-```bash
-python agent_env/scripts/solve_script_with_harness.py
-```
+| Field | Meaning |
+| --- | --- |
+| `split` | Local split to process |
+| `lang` | `en` or `zh` |
+| `harness` | `opencode` or `codex` |
+| `method` | Result directory name; generated when empty |
+| `work_dir` | Working directory exposed to the harness |
+| `tool_python` | Python command used for environment tools |
+| `uid` | Run one query only |
+| `limit` | Smoke-test size; `0` means no limit |
+| `resume` | Skip result JSON files that already exist |
+| `no_run_harness` | Parse existing output without launching an agent |
+| `plan_file` | Evaluate a specified plan file |
 
-Smoke test the configured split with the config's `limit` value:
+Run the configured harness non-interactively. The config's `limit` value
+controls whether this is a smoke test or a full split run:
 
 ```bash
 python agent_env/scripts/solve_script_with_harness.py
