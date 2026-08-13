@@ -1,5 +1,5 @@
 <center>
-  <h1>ChinaTravel: A Real-World Benchmark for Language Agents in Chinese Travel Planning
+  <h1> [ICLR'26] ChinaTravel: A Real-World Benchmark for Language Agents in Chinese Travel Planning
 </h1>
 </center>
 

@@ -15,6 +15,7 @@ from chinatravel.symbol_verification.concept_func import (
     normalize_concept_value,
     set_concept_func_lang,
 )
+from chinatravel.symbol_verification.hard_constraint import evaluate_constraints_py
 
 
 class ConceptNormalizationTests(unittest.TestCase):
@@ -101,6 +102,29 @@ class InnerCityTransportHelperTests(unittest.TestCase):
         self.assertEqual(innercity_transport_cost(transports), 12)
         self.assertEqual(innercity_transport_distance(transports), 12)
         self.assertEqual(innercity_transport_time(transports), 30)
+
+
+class LegacyHardLogicNormalizationTests(unittest.TestCase):
+    def test_apostrophe_and_middle_dot_in_poi_name_are_executable(self):
+        poi_name = "Comrade Mao Zedong's Former Residence·Main Hall"
+        constraint = f"""
+result = False
+for activity in allactivities(plan):
+    if activity_position(activity) == '{poi_name}':
+        result = True
+"""
+        plan = {
+            "itinerary": [
+                {
+                    "day": 1,
+                    "activities": [
+                        {"type": "attraction", "position": poi_name, "transports": []}
+                    ],
+                }
+            ]
+        }
+
+        self.assertEqual(evaluate_constraints_py([constraint], plan), [True])
 
 
 if __name__ == "__main__":

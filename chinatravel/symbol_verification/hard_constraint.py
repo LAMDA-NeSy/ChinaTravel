@@ -1,4 +1,6 @@
 import os
+import json
+import re
 
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
 
@@ -43,6 +45,41 @@ def _set_tool_lang(lang):
         )
     accommodation, restaurants, attractions = _TOOLS_BY_LANG[lang]
     set_concept_func_lang(lang)
+
+
+_ACTIVITY_POSITION_EQ_RE = re.compile(
+    r"^(?P<prefix>\s*if\s+activity_position\(activity\)\s*==\s*)'"
+    r"(?P<value>.*)'(?P<suffix>\s*:\s*)$",
+    re.MULTILINE,
+)
+_POI_DISTANCE_TARGET_RE = re.compile(
+    r"poi_distance\((?P<prefix>\s*target_city\(plan\)\s*,\s*)'"
+    r"(?P<value>[^\n]*)'(?P<suffix>\s*,\s*accommodation_position\s*\))"
+)
+
+
+def _normalize_legacy_hard_logic_py(constraint):
+    """Rewrite generated POI string literals that were emitted with single quotes."""
+    if not isinstance(constraint, str):
+        return constraint
+
+    def replace_activity_position(match):
+        return (
+            f"{match.group('prefix')}"
+            f"{json.dumps(match.group('value'), ensure_ascii=False)}"
+            f"{match.group('suffix')}"
+        )
+
+    def replace_poi_distance(match):
+        return (
+            "poi_distance("
+            f"{match.group('prefix')}"
+            f"{json.dumps(match.group('value'), ensure_ascii=False)}"
+            f"{match.group('suffix')}"
+        )
+
+    constraint = _ACTIVITY_POSITION_EQ_RE.sub(replace_activity_position, constraint)
+    return _POI_DISTANCE_TARGET_RE.sub(replace_poi_distance, constraint)
 
 
 def calc_cost_from_itinerary_wo_intercity(itinerary, people_number):
@@ -445,7 +482,9 @@ for activity in allactivities(plan):
 """
     # hard_logic_py.append(debug_logic_py)
     for constraint in hard_logic_py:
+        original_constraint = constraint
         constraint = normalize_concept_constraint_source(constraint)
+        constraint = _normalize_legacy_hard_logic_py(constraint)
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = plan
         try:
@@ -454,7 +493,7 @@ for activity in allactivities(plan):
             results.append(bool(res_i))
         except Exception as e:
             if verbose:
-                print(f"Error evaluating constraint '{constraint}': {e}")
+                print(f"Error evaluating constraint '{original_constraint}': {e}")
             results.append(False)
         # print(results)
     return results

@@ -35,6 +35,7 @@ def evaluate_preference_py(preference_list, plan, verbose=False):
     results = []
     # hard_logic_py.append(debug_logic_py)
     for _, preference_concept, preference_code in preference_list:
+        preference_code = normalize_concept_constraint_source(preference_code)
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = plan
         try:
