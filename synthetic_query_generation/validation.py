@@ -1,6 +1,7 @@
 """Validation wrappers for generated hard constraints and seed plans."""
 
 from chinatravel.symbol_verification.commonsense_constraint import (
+    Is_activity_grounded,
     Is_attractions_correct,
     Is_hotels_correct,
     Is_intercity_transport_correct,
@@ -36,6 +37,7 @@ def seed_plan_commonsense_errors(plan, lang):
     }
     errors = []
     for func in (
+        Is_activity_grounded,
         Is_intercity_transport_correct,
         Is_attractions_correct,
         Is_hotels_correct,
@@ -57,4 +59,3 @@ def seed_plan_commonsense_errors(plan, lang):
                 }
             )
     return errors
-

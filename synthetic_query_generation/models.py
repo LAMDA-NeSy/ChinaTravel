@@ -36,6 +36,8 @@ class ConstraintGenerationOptions:
     max_or_candidates_per_plan: int = 8
     enabled_generators: set | None = None
     disabled_generators: set = field(default_factory=set)
+    enabled_constraint_keys: set | None = None
+    disabled_constraint_keys: set = field(default_factory=set)
 
 
 @dataclass
@@ -44,6 +46,8 @@ class ConstraintSelectionOptions:
     max_constraints: int = 7
     min_tricky_constraints: int = 2
     min_logic_constraints: int = 2
+    priority_constraint_keys: set = field(default_factory=set)
+    min_priority_constraints: int = 0
 
 
 @dataclass
@@ -91,6 +95,8 @@ class FromPlansConfig:
     max_constraints: int = 7
     min_tricky_constraints: int = 2
     min_logic_constraints: int = 2
+    priority_constraint_keys: set = field(default_factory=set)
+    min_priority_constraints: int = 0
     budget_margin: float = 0.03
     include_basic_constraints: bool = True
     include_negative_constraints: bool = True
@@ -98,6 +104,9 @@ class FromPlansConfig:
     max_or_candidates_per_plan: int = 8
     only_generators: set | None = None
     disabled_generators: set = field(default_factory=set)
+    only_constraint_keys: set | None = None
+    disabled_constraint_keys: set = field(default_factory=set)
+    excluded_plan_prefixes: tuple = field(default_factory=tuple)
     variants_per_plan: int = 1
     flat_output: bool = False
     split_file: Path | None = None
@@ -119,12 +128,16 @@ class FromPlansConfig:
                 max_or_candidates_per_plan=self.max_or_candidates_per_plan,
                 enabled_generators=self.only_generators,
                 disabled_generators=self.disabled_generators,
+                enabled_constraint_keys=self.only_constraint_keys,
+                disabled_constraint_keys=self.disabled_constraint_keys,
             ),
             constraint_selection=ConstraintSelectionOptions(
                 min_constraints=self.min_constraints,
                 max_constraints=self.max_constraints,
                 min_tricky_constraints=self.min_tricky_constraints,
                 min_logic_constraints=self.min_logic_constraints,
+                priority_constraint_keys=self.priority_constraint_keys,
+                min_priority_constraints=self.min_priority_constraints,
             ),
         )
 

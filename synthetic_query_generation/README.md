@@ -40,8 +40,11 @@ disabled without touching the CLI or output pipeline:
 - `pipeline.py`: public generation APIs and output/manifest writing
 - `models.py`: config dataclasses and shared candidate models
 - `templates.py`: template catalog, labels, and shared tag constants
+- `catalog.py`: template semantics and full/legacy/familiar release profiles
 - `constraints.py`: registered constraint generator families and sampling logic
 - `validation.py`: hard-constraint and commonsense validation wrappers
+- `audit.py`: independent dataset, DSL, seed-plan, and coverage checks
+- `export_release.py`: query-only release export
 - `utils.py`: JSON, language, formatting, plan traversal, and cost helpers
 
 The main Python APIs are:
@@ -135,6 +138,33 @@ python -m synthetic_query_generation from-plans \
   --disable-generators day_time
 ```
 
+Template keys can also be controlled independently of generator families. This
+is useful for release profiles that expose only a known subset of the DSL:
+
+```bash
+python -m synthetic_query_generation from-plans \
+  --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
+  --output-dir /tmp/chinatravel_subset \
+  --num-records 100 \
+  --only-constraint-keys trip_days,people_number,total_budget,attraction_time_window \
+  --exclude-plan-prefixes synthetic
+```
+
+`--exclude-plan-prefixes` prevents generated plans from being recursively used
+as new seeds.
+
+Use priority keys when a batch must contain a minimum number of constraints
+from a chosen subset while still mixing in every other enabled family:
+
+```bash
+python -m synthetic_query_generation from-plans \
+  --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
+  --output-dir /tmp/chinatravel_mixed \
+  --num-records 100 \
+  --priority-constraint-keys total_attraction_count,daily_budget,cross_category_order \
+  --min-priority-constraints 2
+```
+
 ## Constraint Families
 
 The current sampler can generate:
@@ -144,12 +174,17 @@ The current sampler can generate:
 - attraction, restaurant, and hotel feature/type sets
 - room count and room type constraints
 - in-city transportation mode constraints
+- exact per-mode journey counts, walking-distance limits, and in-city travel-time limits
 - taxi car-count constraints
 - intercity transportation mode constraints
+- outbound and return intercity departure-time bounds
 - day-specific POI constraints
+- total/day-specific attraction counts and required meal types by day
+- distinct-hotel counts and minimum free-attraction counts
 - time-window constraints
-- attraction ordering constraints
+- attraction duration, same-day attraction pairs, and cross-category ordering
 - tight budget constraints for total, food, hotel, attraction, and in-city transport costs
+- day-specific activity and transportation budgets
 - OR requirements composed from two already valid atomic constraints
 
 The default profile favors constraints that are often harder for UrbanTrip:
@@ -230,3 +265,37 @@ python synthetic_query_generation/polish_queries_stub.py \
 Any future LLM polishing implementation should use `hard_logic_nl` as a
 constraint checklist and must not add, remove, weaken, or strengthen
 requirements.
+
+## Audit And Release Export
+
+Generated records can be independently rechecked against the copied seed plans:
+
+```bash
+python -m synthetic_query_generation.audit \
+  --dataset-dir /tmp/chinatravel_synthetic_hard \
+  --expected-records 100 \
+  --profile full \
+  --lang en
+```
+
+The audit verifies record structure, unique signatures, canonical concept
+labels, natural-language ordering, DSL execution, seed-plan grounding, and all
+commonsense checks. It also verifies configured priority-key minimums and
+reports old/new constraint coverage. It writes `audit/audit_report.json` and
+`audit/constraint_dsl_catalog.md`.
+
+Use `--profile legacy-full` to audit the original 39-key full profile and
+`--profile familiar` for the already released 29-key familiar profile.
+
+After an audit passes, export query-only JSON files with the same seven fields
+as the phase-one public data:
+
+```bash
+python -m synthetic_query_generation.export_release \
+  --dataset-dir /tmp/chinatravel_synthetic_hard \
+  --output-dir /tmp/chinatravel_synthetic_hard/release \
+  --expected-records 100
+```
+
+Seed plans, generator metadata, and source-plan paths remain outside the release
+folder.

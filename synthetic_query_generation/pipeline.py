@@ -4,6 +4,11 @@ import json
 import random
 from pathlib import Path
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
+
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
 
 from synthetic_query_generation.constraints import (
@@ -47,9 +52,18 @@ def generate_record_from_plan(
     set_hard_lang(lang)
     source_uid = Path(plan_path).stem
 
-    base_constraints = make_basic_constraints(plan, lang) if options.include_basic_constraints else []
+    def key_enabled(key):
+        if generation_options.enabled_constraint_keys is not None:
+            if key not in generation_options.enabled_constraint_keys:
+                return False
+        return key not in generation_options.disabled_constraint_keys
+
     generation_options = options.constraint_generation
     selection_options = options.constraint_selection
+    base_constraints = make_basic_constraints(plan, lang) if options.include_basic_constraints else []
+    base_constraints = [
+        constraint for constraint in base_constraints if key_enabled(constraint.key)
+    ]
     candidates = candidate_constraints(
         plan,
         lang,
@@ -57,6 +71,9 @@ def generate_record_from_plan(
         options=generation_options,
         registry=registry,
     )
+    candidates = [
+        constraint for constraint in candidates if key_enabled(constraint.key)
+    ]
 
     valid_candidates = []
     rejected = []
@@ -67,7 +84,7 @@ def generate_record_from_plan(
         else:
             rejected.append({"key": candidate.key, "results": results, "code": candidate.code})
 
-    if generation_options.include_or_constraints:
+    if generation_options.include_or_constraints and key_enabled("either_requirement"):
         for candidate in make_or_constraints(
             valid_candidates,
             rng,
@@ -89,7 +106,27 @@ def generate_record_from_plan(
         sampled_count,
         selection_options.min_tricky_constraints,
         selection_options.min_logic_constraints,
+        priority_keys=selection_options.priority_constraint_keys,
+        min_priority=selection_options.min_priority_constraints,
     )
+    sampled_priority_count = sum(
+        constraint.key in selection_options.priority_constraint_keys
+        for constraint in sampled
+    )
+    if sampled_priority_count < selection_options.min_priority_constraints:
+        return None, {
+            "source_uid": source_uid,
+            "reason": "not_enough_priority_constraints",
+            "required": selection_options.min_priority_constraints,
+            "selected": sampled_priority_count,
+            "available_keys": sorted(
+                {
+                    constraint.key
+                    for constraint in valid_candidates
+                    if constraint.key in selection_options.priority_constraint_keys
+                }
+            ),
+        }
     selected = base_constraints + sampled
     if len(sampled) < selection_options.min_constraints:
         return None, {
@@ -129,9 +166,11 @@ def generate_record_from_plan(
             "constraint_keys": [constraint.key for constraint in selected],
             "constraint_categories": [constraint.category for constraint in selected],
             "constraint_tags": [sorted(constraint.tags) for constraint in selected],
+            "constraint_metadata": [constraint.metadata for constraint in selected],
             "logic_constraint_count": sum(
                 1 for constraint in sampled if constraint.tags & {"not_constraint", "or_group"}
             ),
+            "priority_constraint_count": sampled_priority_count,
             "or_constraint_count": sum(1 for constraint in sampled if "or_group" in constraint.tags),
             "not_constraint_count": sum(1 for constraint in sampled if "not_constraint" in constraint.tags),
         },
@@ -143,6 +182,10 @@ def generate_record_from_plan(
 def load_seed_plans(config: FromPlansConfig, rng):
     plans = []
     for path in sorted(config.plans_dir.glob(config.plan_glob)):
+        if config.excluded_plan_prefixes and path.stem.startswith(
+            config.excluded_plan_prefixes
+        ):
+            continue
         try:
             plan = read_json(path)
         except json.JSONDecodeError:
@@ -167,6 +210,16 @@ def generate_from_plans(config: FromPlansConfig, registry=DEFAULT_REGISTRY):
     seen_signatures = set()
     ordinal = 0
     record_options = config.record_options()
+    progress = (
+        tqdm(
+            total=config.num_records,
+            desc="Generating queries",
+            unit="record",
+            mininterval=2.0,
+        )
+        if tqdm is not None
+        else None
+    )
 
     for path, plan in plans:
         if config.validate_seed_commonsense:
@@ -214,10 +267,15 @@ def generate_from_plans(config: FromPlansConfig, registry=DEFAULT_REGISTRY):
             if config.copy_seed_plans:
                 write_json(seed_plan_dir / f"{record['uid']}.json", plan)
             generated.append(record)
+            if progress is not None:
+                progress.update(1)
             if len(generated) >= config.num_records:
                 break
         if len(generated) >= config.num_records:
             break
+
+    if progress is not None:
+        progress.close()
 
     template_inventory = {}
     for record in generated:
@@ -235,7 +293,7 @@ def generate_from_plans(config: FromPlansConfig, registry=DEFAULT_REGISTRY):
         "lang": config.lang,
         "seed": config.seed,
         "plans_dir": str(config.plans_dir),
-        "data_dir": str(data_dir),
+        "data_dir": str(data_dir.resolve()),
         "copy_seed_plans": config.copy_seed_plans,
         "variants_per_plan": config.variants_per_plan,
         "unique_signatures": len(seen_signatures),
@@ -244,6 +302,8 @@ def generate_from_plans(config: FromPlansConfig, registry=DEFAULT_REGISTRY):
             "max_constraints": config.max_constraints,
             "min_tricky_constraints": config.min_tricky_constraints,
             "min_logic_constraints": config.min_logic_constraints,
+            "priority_constraint_keys": sorted(config.priority_constraint_keys),
+            "min_priority_constraints": config.min_priority_constraints,
             "budget_margin": config.budget_margin,
             "include_basic_constraints": config.include_basic_constraints,
             "include_negative_constraints": config.include_negative_constraints,
@@ -251,6 +311,9 @@ def generate_from_plans(config: FromPlansConfig, registry=DEFAULT_REGISTRY):
             "max_or_candidates_per_plan": config.max_or_candidates_per_plan,
             "only_generators": sorted(config.only_generators) if config.only_generators else None,
             "disabled_generators": sorted(config.disabled_generators),
+            "only_constraint_keys": sorted(config.only_constraint_keys) if config.only_constraint_keys else None,
+            "disabled_constraint_keys": sorted(config.disabled_constraint_keys),
+            "excluded_plan_prefixes": list(config.excluded_plan_prefixes),
         },
         "constraint_generator_registry": registry.names(),
         "skipped": skipped[: config.max_manifest_errors],

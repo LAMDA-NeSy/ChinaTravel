@@ -2,6 +2,7 @@ import os
 import json
 import heapq
 from geopy.distance import geodesic
+from geographiclib.geodesic import Geodesic
 
 from chinatravel.environment.tools.poi.apis import Poi
 from chinatravel.environment.language import CITY_SLUGS, city_names, normalize_lang, relative_database_path
@@ -96,8 +97,19 @@ def find_shortest_path(graph, start, end):
 def find_nearest_station(location, stations):
     nearest_station = None
     min_distance = float("inf")
+    latitude, longitude = location
+    inverse = Geodesic.WGS84.Inverse
     for station in stations:
-        distance = geodesic(location, station["position"]).kilometers
+        station_latitude, station_longitude = station["position"]
+        distance = (
+            inverse(
+                latitude,
+                longitude,
+                station_latitude,
+                station_longitude,
+            )["s12"]
+            / 1000.0
+        )
         if distance < min_distance:
             min_distance = distance
             nearest_station = station
@@ -164,6 +176,16 @@ class Transportation:
             self.graphs[city] = build_graph(self.city_lines_dict[city])
 
         self.poi_search = Poi(lang=self.lang)
+        self._nearest_station_cache = {}
+
+    def _find_nearest_station(self, city, location_name, location):
+        cache_key = (city, location_name)
+        if cache_key not in self._nearest_station_cache:
+            self._nearest_station_cache[cache_key] = find_nearest_station(
+                location,
+                self.city_stations_dict[city],
+            )
+        return self._nearest_station_cache[cache_key]
 
     def goto(self, city, start, end, start_time, transport_type, verbose=False):
         if transport_type not in ["walk", "metro", "taxi"]:
@@ -230,11 +252,15 @@ class Transportation:
 
         elif transport_type == "metro":
             graph = self.graphs[city]
-            stationA, distanceA = find_nearest_station(
-                locationA, self.city_stations_dict[city]
+            stationA, distanceA = self._find_nearest_station(
+                city,
+                locationA_name,
+                locationA,
             )
-            stationB, distanceB = find_nearest_station(
-                locationB, self.city_stations_dict[city]
+            stationB, distanceB = self._find_nearest_station(
+                city,
+                locationB_name,
+                locationB,
             )
             if stationA == stationB:
                 if verbose:

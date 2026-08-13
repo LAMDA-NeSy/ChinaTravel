@@ -6,6 +6,7 @@ from pathlib import Path
 
 from synthetic_query_generation.constraints import DEFAULT_REGISTRY
 from synthetic_query_generation.models import FromPlansConfig, SeedQueryConfig
+from synthetic_query_generation.templates import TEMPLATE_CATALOG
 
 
 def build_parser():
@@ -53,6 +54,17 @@ def build_parser():
     from_plans.add_argument("--max-constraints", type=int, default=7)
     from_plans.add_argument("--min-tricky-constraints", type=int, default=2)
     from_plans.add_argument("--min-logic-constraints", type=int, default=2)
+    from_plans.add_argument(
+        "--priority-constraint-keys",
+        default="",
+        help="Comma-separated constraint keys to prioritize during sampling.",
+    )
+    from_plans.add_argument(
+        "--min-priority-constraints",
+        type=int,
+        default=0,
+        help="Minimum number of directly sampled priority constraints per record.",
+    )
     from_plans.add_argument("--budget-margin", type=float, default=0.03)
     from_plans.add_argument("--include-basic-constraints", action="store_true", default=True)
     from_plans.add_argument("--no-basic-constraints", dest="include_basic_constraints", action="store_false")
@@ -70,6 +82,21 @@ def build_parser():
         "--disable-generators",
         default="",
         help="Comma-separated generator family names to skip.",
+    )
+    from_plans.add_argument(
+        "--only-constraint-keys",
+        default=None,
+        help="Comma-separated template keys allowed in generated records.",
+    )
+    from_plans.add_argument(
+        "--disable-constraint-keys",
+        default="",
+        help="Comma-separated template keys to exclude from generated records.",
+    )
+    from_plans.add_argument(
+        "--exclude-plan-prefixes",
+        default="",
+        help="Comma-separated source-plan UID prefixes to ignore.",
     )
     from_plans.add_argument("--variants-per-plan", type=int, default=1)
     from_plans.add_argument("--flat-output", action="store_true")
@@ -106,6 +133,17 @@ def validate_generator_names(parser, names):
         )
 
 
+def validate_constraint_keys(parser, names):
+    unknown = sorted(names - set(TEMPLATE_CATALOG))
+    if unknown:
+        parser.error(
+            "unknown constraint key(s): "
+            + ", ".join(unknown)
+            + "; known keys: "
+            + ", ".join(sorted(TEMPLATE_CATALOG))
+        )
+
+
 def command_list_generators(_args):
     print("\n".join(DEFAULT_REGISTRY.names()))
 
@@ -134,6 +172,12 @@ def command_from_plans(args):
 
     only_generators = parse_generator_names(args.only_generators)
     disabled_generators = parse_generator_names(args.disable_generators)
+    only_constraint_keys = parse_generator_names(args.only_constraint_keys)
+    disabled_constraint_keys = parse_generator_names(args.disable_constraint_keys)
+    priority_constraint_keys = parse_generator_names(args.priority_constraint_keys)
+    excluded_plan_prefixes = tuple(
+        sorted(parse_generator_names(args.exclude_plan_prefixes))
+    )
     config = FromPlansConfig(
         plans_dir=Path(args.plans_dir),
         output_dir=Path(args.output_dir),
@@ -148,6 +192,8 @@ def command_from_plans(args):
         max_constraints=args.max_constraints,
         min_tricky_constraints=args.min_tricky_constraints,
         min_logic_constraints=args.min_logic_constraints,
+        priority_constraint_keys=priority_constraint_keys,
+        min_priority_constraints=args.min_priority_constraints,
         budget_margin=args.budget_margin,
         include_basic_constraints=args.include_basic_constraints,
         include_negative_constraints=args.include_negative_constraints,
@@ -155,6 +201,9 @@ def command_from_plans(args):
         max_or_candidates_per_plan=args.max_or_candidates_per_plan,
         only_generators=only_generators or None,
         disabled_generators=disabled_generators,
+        only_constraint_keys=only_constraint_keys or None,
+        disabled_constraint_keys=disabled_constraint_keys,
+        excluded_plan_prefixes=excluded_plan_prefixes,
         variants_per_plan=args.variants_per_plan,
         flat_output=args.flat_output,
         split_file=Path(args.split_file) if args.split_file else None,
@@ -172,6 +221,11 @@ def validate_args(parser, args):
         parser.error("--min-constraints cannot exceed --max-constraints")
     if hasattr(args, "min_logic_constraints") and args.min_logic_constraints > args.max_constraints:
         parser.error("--min-logic-constraints cannot exceed --max-constraints")
+    if (
+        hasattr(args, "min_priority_constraints")
+        and args.min_priority_constraints > args.min_constraints
+    ):
+        parser.error("--min-priority-constraints cannot exceed --min-constraints")
     if hasattr(args, "variants_per_plan") and args.variants_per_plan < 1:
         parser.error("--variants-per-plan must be at least 1")
     if hasattr(args, "max_or_candidates_per_plan") and args.max_or_candidates_per_plan < 0:
@@ -180,6 +234,20 @@ def validate_args(parser, args):
         only_generators = parse_generator_names(args.only_generators)
         disabled_generators = parse_generator_names(args.disable_generators)
         validate_generator_names(parser, only_generators | disabled_generators)
+    if hasattr(args, "only_constraint_keys"):
+        only_constraint_keys = parse_generator_names(args.only_constraint_keys)
+        disabled_constraint_keys = parse_generator_names(args.disable_constraint_keys)
+        priority_constraint_keys = parse_generator_names(args.priority_constraint_keys)
+        validate_constraint_keys(
+            parser,
+            only_constraint_keys
+            | disabled_constraint_keys
+            | priority_constraint_keys,
+        )
+        if args.min_priority_constraints and not priority_constraint_keys:
+            parser.error(
+                "--min-priority-constraints requires --priority-constraint-keys"
+            )
 
 
 def main(argv=None):

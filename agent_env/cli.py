@@ -4,27 +4,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from typing import Any
 
 from agent_env.adapter import ChinaTravelEnvAdapter, dumps_result
-from agent_env.runtime import AgentToolRuntime
 
 
 HELP_TEXT = """Commands:
   help
-  check
   tools
-  openai-tools
-  responses-tools
   splits
   call <tool_name> <json_arguments>
-  openai-call <tool_call_json>
-  openai-calls <tool_calls_json_array>
-  openai-message <tool_call_json>
-  openai-messages <tool_calls_json_array>
-  responses-output <function_call_json>
-  responses-outputs <function_calls_json_array>
   world <WorldEnv command>
   quit
 
@@ -49,14 +40,7 @@ def _load_json_object(raw: str) -> dict[str, Any]:
     return value
 
 
-def _load_json_array(raw: str) -> list[Any]:
-    value = json.loads(raw)
-    if not isinstance(value, list):
-        raise ValueError("Arguments must be a JSON array.")
-    return value
-
-
-def _handle_repl_line(runtime: AgentToolRuntime, line: str) -> bool:
+def _handle_repl_line(adapter: ChinaTravelEnvAdapter, line: str) -> bool:
     stripped = line.strip()
     if not stripped:
         return True
@@ -65,23 +49,14 @@ def _handle_repl_line(runtime: AgentToolRuntime, line: str) -> bool:
     if stripped == "help":
         print(HELP_TEXT, flush=True)
         return True
-    if stripped == "check":
-        _print_result(runtime.self_check())
-        return True
     if stripped == "tools":
-        print(dumps_result({"success": True, "tools": runtime.list_mcp_tools()}), flush=True)
-        return True
-    if stripped == "openai-tools":
-        print(dumps_result({"success": True, "tools": runtime.list_openai_tools()}), flush=True)
-        return True
-    if stripped == "responses-tools":
-        print(dumps_result({"success": True, "tools": runtime.list_openai_responses_tools()}), flush=True)
+        print(dumps_result({"success": True, "tools": adapter.list_tools()}), flush=True)
         return True
     if stripped == "splits":
-        print(dumps_result(runtime.adapter.list_splits()), flush=True)
+        print(dumps_result(adapter.list_splits()), flush=True)
         return True
     if stripped.startswith("world "):
-        _print_result(runtime.adapter.world_command(stripped[len("world ") :].strip()))
+        _print_result(adapter.world_command(stripped[len("world ") :].strip()))
         return True
     if stripped.startswith("call "):
         remainder = stripped[len("call ") :].strip()
@@ -91,85 +66,7 @@ def _handle_repl_line(runtime: AgentToolRuntime, line: str) -> bool:
                 raise ValueError("Missing tool name.")
             name = parts[0]
             raw_args = parts[1] if len(parts) > 1 else "{}"
-            _print_result(runtime.call_tool(name, _load_json_object(raw_args)))
-        except Exception as exc:
-            _print_result(
-                {
-                    "success": False,
-                    "error_type": exc.__class__.__name__,
-                    "error": str(exc),
-                }
-            )
-        return True
-    if stripped.startswith("openai-call "):
-        try:
-            tool_call = _load_json_object(stripped[len("openai-call ") :].strip())
-            _print_result(runtime.call_openai_tool(tool_call))
-        except Exception as exc:
-            _print_result(
-                {
-                    "success": False,
-                    "error_type": exc.__class__.__name__,
-                    "error": str(exc),
-                }
-            )
-        return True
-    if stripped.startswith("openai-calls "):
-        try:
-            tool_calls = _load_json_array(stripped[len("openai-calls ") :].strip())
-            _print_result({"success": True, "results": runtime.call_openai_tools(tool_calls)})
-        except Exception as exc:
-            _print_result(
-                {
-                    "success": False,
-                    "error_type": exc.__class__.__name__,
-                    "error": str(exc),
-                }
-            )
-        return True
-    if stripped.startswith("openai-message "):
-        try:
-            tool_call = _load_json_object(stripped[len("openai-message ") :].strip())
-            _print_result({"success": True, "message": runtime.openai_tool_message(tool_call)})
-        except Exception as exc:
-            _print_result(
-                {
-                    "success": False,
-                    "error_type": exc.__class__.__name__,
-                    "error": str(exc),
-                }
-            )
-        return True
-    if stripped.startswith("openai-messages "):
-        try:
-            tool_calls = _load_json_array(stripped[len("openai-messages ") :].strip())
-            _print_result({"success": True, "messages": runtime.openai_tool_messages(tool_calls)})
-        except Exception as exc:
-            _print_result(
-                {
-                    "success": False,
-                    "error_type": exc.__class__.__name__,
-                    "error": str(exc),
-                }
-            )
-        return True
-    if stripped.startswith("responses-output "):
-        try:
-            tool_call = _load_json_object(stripped[len("responses-output ") :].strip())
-            _print_result({"success": True, "output": runtime.responses_tool_output(tool_call)})
-        except Exception as exc:
-            _print_result(
-                {
-                    "success": False,
-                    "error_type": exc.__class__.__name__,
-                    "error": str(exc),
-                }
-            )
-        return True
-    if stripped.startswith("responses-outputs "):
-        try:
-            tool_calls = _load_json_array(stripped[len("responses-outputs ") :].strip())
-            _print_result({"success": True, "outputs": runtime.responses_tool_outputs(tool_calls)})
+            _print_result(adapter.call_tool(name, _load_json_object(raw_args)))
         except Exception as exc:
             _print_result(
                 {
@@ -184,7 +81,7 @@ def _handle_repl_line(runtime: AgentToolRuntime, line: str) -> bool:
     return True
 
 
-def run_repl(runtime: AgentToolRuntime) -> int:
+def run_repl(adapter: ChinaTravelEnvAdapter) -> int:
     print("ChinaTravel agent CLI. Type 'help' for commands, 'quit' to exit.", flush=True)
     while True:
         try:
@@ -195,19 +92,21 @@ def run_repl(runtime: AgentToolRuntime) -> int:
         except KeyboardInterrupt:
             print("", flush=True)
             return 130
-        if not _handle_repl_line(runtime, line):
+        if not _handle_repl_line(adapter, line):
             return 0
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Call ChinaTravel agent environment tools.")
-    parser.add_argument("--lang", "--locale", choices=["zh", "en"], default=None)
+    parser.add_argument(
+        "--lang",
+        choices=["zh", "en"],
+        default=os.environ.get("CHINATRAVEL_LANG", "zh"),
+        help="Sandbox/query language. Defaults to CHINATRAVEL_LANG or zh.",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("check", help="Run a lightweight protocol self-check.")
     subparsers.add_parser("tools", help="List available tools.")
-    subparsers.add_parser("openai-tools", help="List tools in OpenAI tool-call format.")
-    subparsers.add_parser("responses-tools", help="List tools in OpenAI Responses API format.")
     subparsers.add_parser("splits", help="List locally available evaluation splits.")
     subparsers.add_parser("repl", help="Start an interactive prompt.")
 
@@ -223,66 +122,20 @@ def main() -> None:
     world_parser = subparsers.add_parser("world", help="Call the raw WorldEnv command surface.")
     world_parser.add_argument("world_command", help="WorldEnv command string.")
 
-    openai_call_parser = subparsers.add_parser("openai-call", help="Execute an OpenAI tool call object.")
-    openai_call_parser.add_argument("tool_call", help="OpenAI tool call JSON object.")
-
-    openai_calls_parser = subparsers.add_parser("openai-calls", help="Execute an OpenAI tool_calls JSON array.")
-    openai_calls_parser.add_argument("tool_calls", help="OpenAI tool_calls JSON array.")
-
-    openai_message_parser = subparsers.add_parser("openai-message", help="Execute a tool call and return an OpenAI tool response message.")
-    openai_message_parser.add_argument("tool_call", help="OpenAI tool call JSON object.")
-
-    openai_messages_parser = subparsers.add_parser("openai-messages", help="Execute tool calls and return OpenAI tool response messages.")
-    openai_messages_parser.add_argument("tool_calls", help="OpenAI tool_calls JSON array.")
-
-    responses_output_parser = subparsers.add_parser("responses-output", help="Execute a Responses API function_call item.")
-    responses_output_parser.add_argument("tool_call", help="Responses API function_call JSON object.")
-
-    responses_outputs_parser = subparsers.add_parser("responses-outputs", help="Execute Responses API function_call items.")
-    responses_outputs_parser.add_argument("tool_calls", help="Responses API function_call JSON array.")
-
     args = parser.parse_args()
-    runtime = AgentToolRuntime(ChinaTravelEnvAdapter(lang=args.lang))
+    adapter = ChinaTravelEnvAdapter(lang=args.lang)
 
     try:
         if args.command is None or args.command == "repl":
-            code = run_repl(runtime)
-        elif args.command == "check":
-            code = _print_result(runtime.self_check())
+            code = run_repl(adapter)
         elif args.command == "tools":
-            code = _print_result({"success": True, "tools": runtime.list_mcp_tools()})
-        elif args.command == "openai-tools":
-            code = _print_result({"success": True, "tools": runtime.list_openai_tools()})
-        elif args.command == "responses-tools":
-            code = _print_result({"success": True, "tools": runtime.list_openai_responses_tools()})
+            code = _print_result({"success": True, "tools": adapter.list_tools()})
         elif args.command == "splits":
-            code = _print_result(runtime.adapter.list_splits())
+            code = _print_result(adapter.list_splits())
         elif args.command == "call":
-            code = _print_result(runtime.call_tool(args.tool, _load_json_object(args.arguments)))
-        elif args.command == "openai-call":
-            code = _print_result(runtime.call_openai_tool(_load_json_object(args.tool_call)))
-        elif args.command == "openai-calls":
-            code = _print_result(
-                {"success": True, "results": runtime.call_openai_tools(_load_json_array(args.tool_calls))}
-            )
-        elif args.command == "openai-message":
-            code = _print_result(
-                {"success": True, "message": runtime.openai_tool_message(_load_json_object(args.tool_call))}
-            )
-        elif args.command == "openai-messages":
-            code = _print_result(
-                {"success": True, "messages": runtime.openai_tool_messages(_load_json_array(args.tool_calls))}
-            )
-        elif args.command == "responses-output":
-            code = _print_result(
-                {"success": True, "output": runtime.responses_tool_output(_load_json_object(args.tool_call))}
-            )
-        elif args.command == "responses-outputs":
-            code = _print_result(
-                {"success": True, "outputs": runtime.responses_tool_outputs(_load_json_array(args.tool_calls))}
-            )
+            code = _print_result(adapter.call_tool(args.tool, _load_json_object(args.arguments)))
         elif args.command == "world":
-            code = _print_result(runtime.adapter.world_command(args.world_command))
+            code = _print_result(adapter.world_command(args.world_command))
         else:
             parser.error(f"Unknown command: {args.command}")
             code = 2

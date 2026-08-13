@@ -14,6 +14,13 @@ TRICKY_TAGS = {
     "not_constraint",
     "or_group",
     "exact_time",
+    "count",
+    "relation",
+    "cross_category",
+    "distance",
+    "duration",
+    "directional_time",
+    "meal_types",
 }
 
 ROOM_TYPE_LABELS = {
@@ -80,6 +87,21 @@ TEMPLATE_CATALOG = {
         "en": "The intercity itinerary must include {intercity_modes}.",
         "zh": "城际交通必须包含{intercity_modes}。",
     },
+    "inner_transport_mode_count": {
+        "category": "transport",
+        "en": "The itinerary must contain exactly {count} in-city {transport_mode} journeys.",
+        "zh": "行程中必须恰好包含{count}次{transport_mode}行程。",
+    },
+    "walking_distance_budget": {
+        "category": "transport",
+        "en": "Keep the total walking distance within {limit} kilometers.",
+        "zh": "总步行距离不得超过{limit}公里。",
+    },
+    "innercity_travel_time_budget": {
+        "category": "transport",
+        "en": "Keep the total time spent on in-city transportation within {limit} minutes.",
+        "zh": "市内交通总耗时不得超过{limit}分钟。",
+    },
     "required_attraction_names": {
         "category": "attraction",
         "en": "Visit the following attractions: {names}.",
@@ -110,6 +132,31 @@ TEMPLATE_CATALOG = {
         "en": "Include the following hotel feature types: {types}.",
         "zh": "必须包含以下酒店特色类型：{types}。",
     },
+    "total_attraction_count": {
+        "category": "attraction",
+        "en": "Visit exactly {count} attractions during the trip.",
+        "zh": "整个行程必须恰好安排{count}个景点。",
+    },
+    "attraction_count_on_day": {
+        "category": "attraction",
+        "en": "Visit exactly {count} attractions on day {day}.",
+        "zh": "第{day}天必须恰好安排{count}个景点。",
+    },
+    "required_meals_on_day": {
+        "category": "restaurant",
+        "en": "Day {day} must include {meal_types}.",
+        "zh": "第{day}天必须包含{meal_types}。",
+    },
+    "distinct_accommodation_count": {
+        "category": "hotel",
+        "en": "Stay at exactly {count} different hotels.",
+        "zh": "整个行程必须恰好入住{count}家不同的酒店。",
+    },
+    "free_attraction_count_minimum": {
+        "category": "attraction",
+        "en": "Include at least {count} free attractions.",
+        "zh": "至少安排{count}个免费景点。",
+    },
     "attraction_on_day": {
         "category": "attraction",
         "en": "Visit {name} on day {day}.",
@@ -127,38 +174,63 @@ TEMPLATE_CATALOG = {
     },
     "attraction_time_window": {
         "category": "attraction",
-        "en": "Schedule {name} between {start_time} and {end_time}.",
+        "en": "Visit {name} between {start_time} and {end_time}.",
         "zh": "必须在{start_time}到{end_time}之间安排{name}。",
     },
     "restaurant_time_window": {
         "category": "restaurant",
-        "en": "Schedule {name} between {start_time} and {end_time}.",
+        "en": "Dine at {name} between {start_time} and {end_time}.",
         "zh": "必须在{start_time}到{end_time}之间安排{name}。",
     },
     "accommodation_time_window": {
         "category": "hotel",
-        "en": "Schedule {name} between {start_time} and {end_time}.",
+        "en": "Stay at {name} between {start_time} and {end_time}.",
         "zh": "必须在{start_time}到{end_time}之间安排{name}。",
     },
     "attraction_exact_time": {
         "category": "attraction",
-        "en": "Schedule {name} exactly from {start_time} to {end_time}.",
+        "en": "Visit {name} exactly from {start_time} to {end_time}.",
         "zh": "必须精确在{start_time}到{end_time}之间安排{name}。",
     },
     "restaurant_exact_time": {
         "category": "restaurant",
-        "en": "Schedule {name} exactly from {start_time} to {end_time}.",
+        "en": "Dine at {name} exactly from {start_time} to {end_time}.",
         "zh": "必须精确在{start_time}到{end_time}之间安排{name}。",
     },
     "accommodation_exact_time": {
         "category": "hotel",
-        "en": "Schedule {name} exactly from {start_time} to {end_time}.",
+        "en": "Stay at {name} exactly from {start_time} to {end_time}.",
         "zh": "必须精确在{start_time}到{end_time}之间安排{name}。",
+    },
+    "attraction_duration_minimum": {
+        "category": "attraction",
+        "en": "Spend at least {minutes} minutes visiting attractions.",
+        "zh": "景点游览总时长至少为{minutes}分钟。",
+    },
+    "outbound_departure_deadline": {
+        "category": "transport",
+        "en": "The outbound intercity trip must depart no later than {time}.",
+        "zh": "去程城际交通必须在{time}之前（含该时刻）出发。",
+    },
+    "return_departure_earliest": {
+        "category": "transport",
+        "en": "The return intercity trip must depart no earlier than {time}.",
+        "zh": "返程城际交通不得早于{time}出发。",
     },
     "attraction_order": {
         "category": "attraction",
         "en": "Visit {first_name} before {second_name}.",
         "zh": "必须先去{first_name}，再去{second_name}。",
+    },
+    "attraction_pair_on_day": {
+        "category": "attraction",
+        "en": "Visit both {first_name} and {second_name} on day {day}.",
+        "zh": "第{day}天同时游览{first_name}和{second_name}。",
+    },
+    "cross_category_order": {
+        "category": "logic",
+        "en": "Complete {first_activity} before {second_activity}.",
+        "zh": "先完成{first_activity}，再完成{second_activity}。",
     },
     "total_budget": {
         "category": "budget",
@@ -185,34 +257,39 @@ TEMPLATE_CATALOG = {
         "en": "Keep transportation within the destination city within {limit}.",
         "zh": "目的地城市内交通费用不超过{limit}。",
     },
+    "daily_budget": {
+        "category": "budget",
+        "en": "Keep all activity and transportation costs on day {day} within {limit}.",
+        "zh": "第{day}天的活动与交通总费用不得超过{limit}。",
+    },
     "forbidden_attraction_names": {
         "category": "attraction",
-        "en": "Do not visit any of the following attractions: {names}.",
+        "en": "Do not include any of these attractions: {names}.",
         "zh": "不要安排以下任何景点：{names}。",
     },
     "forbidden_restaurant_names": {
         "category": "restaurant",
-        "en": "Do not dine at any of the following restaurants: {names}.",
+        "en": "Do not include any of these restaurants: {names}.",
         "zh": "不要安排以下任何餐厅：{names}。",
     },
     "forbidden_accommodation_names": {
         "category": "hotel",
-        "en": "Do not stay at any of the following hotels: {names}.",
+        "en": "Do not include any of these hotels: {names}.",
         "zh": "不要安排以下任何酒店：{names}。",
     },
     "forbidden_attraction_types": {
         "category": "attraction",
-        "en": "Do not include any of the following attraction types: {types}.",
+        "en": "Do not include any of these attraction types: {types}.",
         "zh": "不要包含以下任何景点类型：{types}。",
     },
     "forbidden_restaurant_types": {
         "category": "restaurant",
-        "en": "Do not include any of the following restaurant types: {types}.",
+        "en": "Do not include any of these restaurant types: {types}.",
         "zh": "不要包含以下任何餐厅类型：{types}。",
     },
     "forbidden_accommodation_types": {
         "category": "hotel",
-        "en": "Do not include any of the following hotel feature types: {types}.",
+        "en": "Do not include any of these hotel feature types: {types}.",
         "zh": "不要包含以下任何酒店特色类型：{types}。",
     },
     "forbidden_inner_transport_modes": {
@@ -236,4 +313,3 @@ TEMPLATE_CATALOG = {
         "zh": "满足以下二选一要求：{first_requirement} 或 {second_requirement}",
     },
 }
-

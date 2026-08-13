@@ -128,10 +128,33 @@
                       "type": {
                         "enum": ["airplane", "train"]
                       }
-                    }
+                    },
+                    "required": ["type"]
                   },
                   "then": {
-                    "required": ["start", "end"]
+                    "required": ["start", "end"],
+                    "not": {
+                      "required": ["position"]
+                    }
+                  },
+                  "else": {
+                    "required": ["position"],
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": ["start"]
+                        },
+                        {
+                          "required": ["end"]
+                        },
+                        {
+                          "required": ["FlightID"]
+                        },
+                        {
+                          "required": ["TrainID"]
+                        }
+                      ]
+                    }
                   }
                 },
                 {

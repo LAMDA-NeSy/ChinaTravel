@@ -94,7 +94,7 @@ def minute_of(value):
 
 
 def format_minute(value):
-    value = max(0, min(23 * 60 + 59, int(value)))
+    value = max(0, min(24 * 60, int(value)))
     return f"{value // 60:02d}:{value % 60:02d}"
 
 
