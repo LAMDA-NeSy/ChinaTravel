@@ -16,8 +16,9 @@ constraints, commonsense validation, and preference-based scoring.
 
 ## Post-Competition Release
 
-This branch consolidates the engineering work completed during and after
-TPC@IJCAI 2026:
+The `next` branch is the integration candidate intended to replace the current
+`main` branch after review. It is not the default branch yet. It consolidates
+the engineering work completed during and after TPC@IJCAI 2026:
 
 - a refactored OpenAI-compatible model runtime supporting Chat Completions and
   the Responses API;
@@ -34,6 +35,20 @@ TPC@IJCAI 2026:
 
 Generated competition data, private test splits, API credentials, and local
 model outputs are not committed to this branch.
+
+## Changelog
+
+### 2026.08
+
+- Open-sourced the modular synthetic data generation pipeline, including the
+  constraint/template catalog, controllable sampling profiles, seed-plan
+  validation, independent dataset audit, and query-only release exporter.
+- Consolidated the competition evaluator fixes for grounding, chronology,
+  transport, meal counting, hard-logic execution, invalid-plan scoring,
+  bilingual normalization, deterministic loading, and performance caches.
+- Added the refactored OpenAI-compatible runtime, bilingual agent environment,
+  translation audit/repair workflow, fixed English sandbox exporter, and
+  Chinese/English documentation.
 
 ## Repository Map
 
