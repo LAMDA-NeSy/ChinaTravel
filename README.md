@@ -49,6 +49,8 @@ model outputs are not committed to this branch.
 - Added the refactored OpenAI-compatible runtime, bilingual agent environment,
   translation audit/repair workflow, fixed English sandbox exporter, and
   Chinese/English documentation.
+- Replaced machine-specific example paths with repository-relative,
+  Git-ignored `artifacts/` outputs for portable local workflows.
 
 ## Repository Map
 
@@ -212,23 +214,27 @@ The generator samples executable constraints only from already valid seed
 plans, validates every candidate, validates the final combination again, and
 writes an auditable manifest.
 
+The examples below assume they are run from the repository root. Generated
+files use the repository-relative, Git-ignored `artifacts/` directory; replace
+it with any explicit output location when integrating the pipeline elsewhere.
+
 ```bash
 python -m synthetic_query_generation seed-queries \
-  --output-dir /tmp/chinatravel_seed_queries \
+  --output-dir artifacts/synthetic/seed_queries \
   --num-records 100 \
   --lang en \
   --seed 2026
 
 python -m synthetic_query_generation from-plans \
   --plans-dir results/seed_planner \
-  --output-dir /tmp/chinatravel_synthetic \
+  --output-dir artifacts/synthetic/generated \
   --num-records 100 \
   --lang en \
   --seed 2026 \
   --copy-seed-plans
 
 python -m synthetic_query_generation.audit \
-  --dataset-dir /tmp/chinatravel_synthetic \
+  --dataset-dir artifacts/synthetic/generated \
   --expected-records 100 \
   --profile full \
   --lang en
@@ -258,8 +264,8 @@ See [Translation and Audit Pipeline](scripts/TRANSLATION_PIPELINE.md).
 To export canonicalized English sandbox data without modifying the source:
 
 ```bash
-python scripts/export_fixed_sandbox.py /tmp/ChinaTravel_sandbox_en_fixed \
-  --archive /tmp/ChinaTravel_sandbox_en_fixed.zip
+python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
+  --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
 The archive contains a manifest, change report, and checksums. See

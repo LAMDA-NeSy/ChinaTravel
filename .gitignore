@@ -19,3 +19,4 @@ agent_env/config.toml
 local_eval_logs/
 chinatravel/environment/database_en.zip
 translation_api_config.json
+artifacts/

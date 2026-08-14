@@ -6,10 +6,12 @@
 
 `export_fixed_sandbox.py` creates a new, distributable `database_en` snapshot
 with canonical English concept labels. It never edits the source directory.
+The examples run from the repository root and write under the Git-ignored,
+repository-relative `artifacts/` directory.
 
 ```bash
-python scripts/export_fixed_sandbox.py /tmp/ChinaTravel_sandbox_en_fixed \
-  --archive /tmp/ChinaTravel_sandbox_en_fixed.zip
+python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
+  --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
 Use `--source <database_en>` to export from a non-default source. Both the
@@ -45,11 +47,12 @@ as its root entry.
 ## 简体中文
 
 `export_fixed_sandbox.py` 会从现有 `database_en` 创建一份可分发的规范化英文沙盒，
-不会修改源目录。
+不会修改源目录。以下命令从仓库根目录执行，输出写入已被 Git 忽略的仓库相对目录
+`artifacts/`。
 
 ```bash
-python scripts/export_fixed_sandbox.py /tmp/ChinaTravel_sandbox_en_fixed \
-  --archive /tmp/ChinaTravel_sandbox_en_fixed.zip
+python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
+  --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
 如果源数据库不在默认位置，可使用 `--source <database_en>`。输出目录和压缩包路径

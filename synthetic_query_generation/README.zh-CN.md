@@ -19,6 +19,10 @@ Query。生成代码、约束模板和审计工具已公开，但生成后的比
 `people_number`、`hard_logic_py`、`hard_logic_nl` 和 `nature_language`。
 审计版本还包含 `source_plan_uid`、`seed_plan_path` 和 `generation_profile`。
 
+所有示例命令均从仓库根目录执行，并写入已被 Git 忽略的仓库相对目录
+`artifacts/`。CLI 也接受调用方显式传入的其他相对或绝对路径，生成器本身不绑定
+任何机器专用输出路径。
+
 ## 模块结构
 
 | 文件 | 用途 |
@@ -37,7 +41,7 @@ Query。生成代码、约束模板和审计工具已公开，但生成后的比
 
 ```bash
 python -m synthetic_query_generation seed-queries \
-  --output-dir /tmp/chinatravel_seed_queries \
+  --output-dir artifacts/synthetic/seed_queries \
   --num-records 100 \
   --lang en \
   --seed 2026
@@ -50,7 +54,7 @@ python -m synthetic_query_generation seed-queries \
 ```bash
 python -m synthetic_query_generation from-plans \
   --plans-dir results/seed_planner \
-  --output-dir /tmp/chinatravel_synthetic \
+  --output-dir artifacts/synthetic/generated \
   --num-records 100 \
   --lang en \
   --seed 2026 \
@@ -77,7 +81,7 @@ python -m synthetic_query_generation list-generators
 ```bash
 python -m synthetic_query_generation from-plans \
   --plans-dir results/seed_planner \
-  --output-dir /tmp/chinatravel_budget_only \
+  --output-dir artifacts/synthetic/budget_only \
   --num-records 20 \
   --only-generators budget,transport \
   --no-or-constraints
@@ -88,7 +92,7 @@ python -m synthetic_query_generation from-plans \
 ```bash
 python -m synthetic_query_generation from-plans \
   --plans-dir results/seed_planner \
-  --output-dir /tmp/chinatravel_subset \
+  --output-dir artifacts/synthetic/subset \
   --num-records 100 \
   --only-constraint-keys trip_days,people_number,total_budget,attraction_time_window \
   --exclude-plan-prefixes synthetic
@@ -125,7 +129,7 @@ generator，并返回 `ConstraintCandidate`。候选约束必须能在 seed plan
 
 ```bash
 python -m synthetic_query_generation.audit \
-  --dataset-dir /tmp/chinatravel_synthetic \
+  --dataset-dir artifacts/synthetic/generated \
   --expected-records 100 \
   --profile full \
   --lang en
@@ -139,8 +143,8 @@ grounding、常识约束和约束覆盖率，并输出 `audit/audit_report.json`
 
 ```bash
 python -m synthetic_query_generation.export_release \
-  --dataset-dir /tmp/chinatravel_synthetic \
-  --output-dir /tmp/chinatravel_synthetic/release \
+  --dataset-dir artifacts/synthetic/generated \
+  --output-dir artifacts/synthetic/generated/release \
   --expected-records 100
 ```
 

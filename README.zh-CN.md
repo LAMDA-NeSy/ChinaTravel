@@ -39,6 +39,8 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
   无效结果计分、双语规范化、确定性加载和性能缓存；
 - 加入重构后的 OpenAI-compatible runtime、双语 Agent 环境、翻译审计与修复流程、
   英文沙盒修复导出工具以及中英文文档。
+- 将机器相关的示例路径替换为仓库相对且已被 Git 忽略的 `artifacts/`，方便在不同
+  环境中直接运行。
 
 ## 目录结构
 
@@ -194,23 +196,26 @@ OpenCode、Codex、断点续跑、输出文件、HTTP 和 MCP 的详细说明见
 生成器只从已经有效的 seed plan 中采样可执行约束；每条候选约束和最终约束组合
 都会再次验证，并生成可审计的 manifest。
 
+以下命令默认从仓库根目录执行，生成文件统一写入仓库相对且已被 Git 忽略的
+`artifacts/`。在其他环境集成时可以显式替换为所需输出位置。
+
 ```bash
 python -m synthetic_query_generation seed-queries \
-  --output-dir /tmp/chinatravel_seed_queries \
+  --output-dir artifacts/synthetic/seed_queries \
   --num-records 100 \
   --lang en \
   --seed 2026
 
 python -m synthetic_query_generation from-plans \
   --plans-dir results/seed_planner \
-  --output-dir /tmp/chinatravel_synthetic \
+  --output-dir artifacts/synthetic/generated \
   --num-records 100 \
   --lang en \
   --seed 2026 \
   --copy-seed-plans
 
 python -m synthetic_query_generation.audit \
-  --dataset-dir /tmp/chinatravel_synthetic \
+  --dataset-dir artifacts/synthetic/generated \
   --expected-records 100 \
   --profile full \
   --lang en
@@ -239,8 +244,8 @@ python scripts/repair_phase1_translations.py
 导出规范化英文沙盒时，不会修改原始数据库：
 
 ```bash
-python scripts/export_fixed_sandbox.py /tmp/ChinaTravel_sandbox_en_fixed \
-  --archive /tmp/ChinaTravel_sandbox_en_fixed.zip
+python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
+  --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
 压缩包包含 manifest、修改报告和校验和。见

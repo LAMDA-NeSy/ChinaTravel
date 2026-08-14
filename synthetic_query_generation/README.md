@@ -32,6 +32,11 @@ Additional trace fields are included so generated data can be audited:
 - `seed_plan_path`
 - `generation_profile`
 
+All command examples are run from the repository root and write to the
+repository-relative `artifacts/` directory, which is ignored by Git. The CLI
+accepts any other relative or absolute location supplied explicitly by the
+caller; no machine-specific output path is built into the generator.
+
 ## Module Layout
 
 The generator is split into small modules so future constraints can be added or
@@ -58,7 +63,7 @@ from synthetic_query_generation import FromPlansConfig, generate_from_plans
 manifest = generate_from_plans(
     FromPlansConfig(
         plans_dir=Path("results/UrbanTrip_deepseek_en_oracletranslation"),
-        output_dir=Path("/tmp/chinatravel_synthetic_hard"),
+        output_dir=Path("artifacts/synthetic/generated"),
         num_records=100,
         lang="en",
     )
@@ -73,7 +78,7 @@ another planner before constraint sampling.
 
 ```bash
 python -m synthetic_query_generation seed-queries \
-  --output-dir /tmp/chinatravel_seed_queries \
+  --output-dir artifacts/synthetic/seed_queries \
   --num-records 100 \
   --lang en \
   --seed 2026
@@ -89,7 +94,7 @@ Use `from-plans` on a directory of valid plan JSON files:
 ```bash
 python -m synthetic_query_generation from-plans \
   --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
-  --output-dir /tmp/chinatravel_synthetic_hard \
+  --output-dir artifacts/synthetic/generated \
   --num-records 100 \
   --lang en \
   --seed 2026 \
@@ -126,7 +131,7 @@ python -m synthetic_query_generation list-generators
 
 python -m synthetic_query_generation from-plans \
   --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
-  --output-dir /tmp/chinatravel_budget_only \
+  --output-dir artifacts/synthetic/budget_only \
   --num-records 20 \
   --lang en \
   --only-generators budget,transport \
@@ -134,7 +139,7 @@ python -m synthetic_query_generation from-plans \
 
 python -m synthetic_query_generation from-plans \
   --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
-  --output-dir /tmp/chinatravel_without_time \
+  --output-dir artifacts/synthetic/without_time \
   --num-records 20 \
   --lang en \
   --disable-generators day_time
@@ -146,7 +151,7 @@ is useful for release profiles that expose only a known subset of the DSL:
 ```bash
 python -m synthetic_query_generation from-plans \
   --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
-  --output-dir /tmp/chinatravel_subset \
+  --output-dir artifacts/synthetic/subset \
   --num-records 100 \
   --only-constraint-keys trip_days,people_number,total_budget,attraction_time_window \
   --exclude-plan-prefixes synthetic
@@ -161,7 +166,7 @@ from a chosen subset while still mixing in every other enabled family:
 ```bash
 python -m synthetic_query_generation from-plans \
   --plans-dir results/UrbanTrip_deepseek_en_oracletranslation \
-  --output-dir /tmp/chinatravel_mixed \
+  --output-dir artifacts/synthetic/mixed \
   --num-records 100 \
   --priority-constraint-keys total_attraction_count,daily_budget,cross_category_order \
   --min-priority-constraints 2
@@ -250,8 +255,8 @@ Generate polishing prompts:
 
 ```bash
 python synthetic_query_generation/polish_queries_stub.py \
-  --input-dir /tmp/chinatravel_synthetic_hard/data \
-  --output-dir /tmp/chinatravel_polish_prompts \
+  --input-dir artifacts/synthetic/generated/data \
+  --output-dir artifacts/synthetic/polish_prompts \
   --mode prompts
 ```
 
@@ -259,8 +264,8 @@ Copy records without polishing:
 
 ```bash
 python synthetic_query_generation/polish_queries_stub.py \
-  --input-dir /tmp/chinatravel_synthetic_hard/data \
-  --output-dir /tmp/chinatravel_unpolished_copy \
+  --input-dir artifacts/synthetic/generated/data \
+  --output-dir artifacts/synthetic/unpolished_copy \
   --mode copy
 ```
 
@@ -274,7 +279,7 @@ Generated records can be independently rechecked against the copied seed plans:
 
 ```bash
 python -m synthetic_query_generation.audit \
-  --dataset-dir /tmp/chinatravel_synthetic_hard \
+  --dataset-dir artifacts/synthetic/generated \
   --expected-records 100 \
   --profile full \
   --lang en
@@ -294,8 +299,8 @@ as the phase-one public data:
 
 ```bash
 python -m synthetic_query_generation.export_release \
-  --dataset-dir /tmp/chinatravel_synthetic_hard \
-  --output-dir /tmp/chinatravel_synthetic_hard/release \
+  --dataset-dir artifacts/synthetic/generated \
+  --output-dir artifacts/synthetic/generated/release \
   --expected-records 100
 ```
 
