@@ -81,7 +81,7 @@ pip install -r requirements.txt
 
 2. Download the database and unzip it to the "chinatravel/environment/" directory
 
-Download Links: [Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU), [NJU Drive](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/)
+Download: [Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 
 3. Download the open-source LLMs (optional).
 
