@@ -9,41 +9,29 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
 可执行 DSL 约束、常识验证和偏好评分。
 
 [![项目主页](https://img.shields.io/badge/项目主页-访问-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
-[![论文](https://img.shields.io/badge/论文-查看-red)](https://arxiv.org/abs/2412.13682)
+[![论文](https://img.shields.io/badge/论文-查看-red)](https://openreview.net/forum?id=0YRVlxY9BH)
 [![Query 数据](https://img.shields.io/badge/Query-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
 [![沙盒数据](https://img.shields.io/badge/沙盒-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/竞赛-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
-## 赛后完整发布
+## 2026.08 正式版本
 
-`next` 是计划在审阅完成后替代当前 `main` 的候选集成分支，目前尚未成为默认分支。
-它整合了 TPC@IJCAI 2026 比赛期间及赛后的工程工作：
+2026.08 版本是 ChinaTravel 在比赛结束后的正式维护版本，统一整合了
+TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数据工具：
 
-- 重构后的 OpenAI-compatible 模型运行时，同时支持 Chat Completions 和
-  Responses API；
-- 通过 `--lang zh` 和 `--lang en` 显式选择中文或英文查询与沙盒；
-- 比赛期间全部正式测评修复，包括实体落库、活动时间顺序、交通验证、餐次统计、
-  硬约束执行、无效结果计分、确定性数据加载及测评缓存；
-- 模块化合成数据生成器、约束目录、独立审计与发布导出流程；
-- 中译英 DSL/Query 翻译、规则与 LLM 联合审计、选择性修复、保守重审和人工裁决工具；
-- 可复现的英文沙盒规范化导出工具。
+- OpenAI-compatible 模型运行时，同时支持 Chat Completions 和 Responses API；
+- 通过 `--lang zh` 和 `--lang en` 显式选择中文或英文 Query 与沙盒；
+- 完整的测评加固，包括实体落库、活动时间顺序、交通验证、餐次统计、硬约束执行、
+  无效结果计分、确定性数据加载和测评缓存；
+- 模块化合成 Query 生成，包括约束目录、可控采样、独立审计和仅包含 Query 的发布
+  导出流程；
+- 中译英 DSL/Query 翻译，包括规则与 LLM 联合审计、选择性修复、保守重审和人工
+  裁决流程；
+- 可复现的规范化英文沙盒导出，以及包含原始压缩包、Parquet config 和校验和的
+  Hugging Face 双语发布；
+- 使用仓库相对且已被 Git 忽略的 `artifacts/` 目录，便于在不同环境中运行本地流程。
 
-本分支不包含比赛私有测试集、生成后的私有数据、API 密钥或本地模型输出。
-
-## 更新日志
-
-### 2026.08
-
-- 开源模块化合成数据生成 pipeline，包括约束与模板目录、可控采样 profile、seed plan
-  验证、独立数据审计和仅包含 Query 的发布导出工具；
-- 整合比赛期间的测评修复，包括实体落库、时间顺序、交通、餐次、硬约束执行、
-  无效结果计分、双语规范化、确定性加载和性能缓存；
-- 加入重构后的 OpenAI-compatible runtime、双语 Agent 环境、翻译审计与修复流程、
-  英文沙盒修复导出工具以及中英文文档。
-- 在 Hugging Face 发布经校验的中文与规范化英文沙盒快照，包含原始压缩包、标准化
-  Parquet config 和校验和。
-- 将机器相关的示例路径替换为仓库相对且已被 Git 忽略的 `artifacts/`，方便在不同
-  环境中直接运行。
+比赛专用的生成数据和私有测试 split 另行分发。仓库不包含 API 密钥或本地模型输出。
 
 ## 目录结构
 
@@ -279,6 +267,25 @@ DSL 安全控制流、合成约束和翻译修复。
 
 - [TPC@IJCAI 2026](https://chinatravel-competition.github.io/IJCAI2026/)
 - [TPC@IJCAI 2025](https://chinatravel-competition.github.io/IJCAI2025/)
+
+## 致谢
+
+感谢 [Stefan Schneider](https://github.com/stefanbschneider) 和 Team
+fabiundstefan，包括 [Fabian Missbrenner](https://github.com/fabufab)，以负责任的方式
+披露并详细记录测评器和计分问题。他们的反馈直接推动了本版本对时间顺序、交通、
+餐次和有效性验证的完善。
+
+同时感谢
+[@450112489](https://github.com/450112489)、
+[@zihaocheng-buaa](https://github.com/zihaocheng-buaa)、
+[@277CPS](https://github.com/277CPS)、
+[@DuanchuWang](https://github.com/DuanchuWang)、
+[@evergreenee](https://github.com/evergreenee)、
+[@yishu031031](https://github.com/yishu031031) 和
+[@luck-lak](https://github.com/luck-lak) 对数据、测评、prompt、安装流程和文档提出的
+可操作反馈；感谢 [@ploract](https://huggingface.co/ploract) 和
+[@lucmek](https://huggingface.co/lucmek) 协助修正 Hugging Face Query 数据，并感谢
+[Niels Rogge](https://github.com/NielsRogge) 建议在 Hugging Face 公开发布沙盒数据。
 
 ## 联系方式
 

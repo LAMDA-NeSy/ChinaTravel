@@ -10,50 +10,36 @@ combines structured sandbox data, natural-language requests, executable DSL
 constraints, commonsense validation, and preference-based scoring.
 
 [![Webpage](https://img.shields.io/badge/Webpage-Visit-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
-[![Paper](https://img.shields.io/badge/Paper-View-red)](https://arxiv.org/abs/2412.13682)
+[![Paper](https://img.shields.io/badge/Paper-View-red)](https://openreview.net/forum?id=0YRVlxY9BH)
 [![Queries](https://img.shields.io/badge/Queries-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
 [![Sandbox](https://img.shields.io/badge/Sandbox-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/Competition-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
-## Post-Competition Release
+## Release 2026.08
 
-The `next` branch is the integration candidate intended to replace the current
-`main` branch after review. It is not the default branch yet. It consolidates
-the engineering work completed during and after TPC@IJCAI 2026:
+The 2026.08 release is the maintained post-competition version of ChinaTravel.
+It consolidates the benchmark, evaluator, bilingual environment, and data
+tooling developed during and after TPC@IJCAI 2026:
 
-- a refactored OpenAI-compatible model runtime supporting Chat Completions and
-  the Responses API;
+- OpenAI-compatible model runtime supporting Chat Completions and the Responses
+  API;
 - explicit Chinese and English query/sandbox selection through `--lang zh` and
   `--lang en`;
-- the final evaluator fixes for entity grounding, activity chronology,
-  transport validation, meal counting, hard-logic execution, invalid-plan
-  scoring, deterministic data loading, and evaluation caches;
-- the modular synthetic-query generator, constraint catalog, audit pipeline,
-  and release exporter;
-- the Chinese-to-English DSL/query translation, rule and LLM audit, selective
-  repair, conservative re-audit, and human-adjudication tools;
-- a reproducible exporter for canonicalized English sandbox data.
+- hardened evaluation for entity grounding, activity chronology, transport
+  validation, meal counting, hard-logic execution, invalid-plan scoring,
+  deterministic data loading, and cached evaluation;
+- modular synthetic-query generation with a constraint catalog, controllable
+  sampling, independent audit, and query-only release export;
+- Chinese-to-English DSL/query translation with rule and LLM audit, selective
+  repair, conservative re-audit, and human-adjudication workflows;
+- reproducible export of canonicalized English sandbox data and bilingual
+  Hugging Face releases with raw archives, Parquet configs, and checksums;
+- repository-relative, Git-ignored `artifacts/` outputs for portable local
+  workflows.
 
-Generated competition data, private test splits, API credentials, and local
-model outputs are not committed to this branch.
-
-## Changelog
-
-### 2026.08
-
-- Open-sourced the modular synthetic data generation pipeline, including the
-  constraint/template catalog, controllable sampling profiles, seed-plan
-  validation, independent dataset audit, and query-only release exporter.
-- Consolidated the competition evaluator fixes for grounding, chronology,
-  transport, meal counting, hard-logic execution, invalid-plan scoring,
-  bilingual normalization, deterministic loading, and performance caches.
-- Added the refactored OpenAI-compatible runtime, bilingual agent environment,
-  translation audit/repair workflow, fixed English sandbox exporter, and
-  Chinese/English documentation.
-- Published the validated Chinese and canonicalized English sandbox snapshots
-  on Hugging Face with raw archives, normalized Parquet configs, and checksums.
-- Replaced machine-specific example paths with repository-relative,
-  Git-ignored `artifacts/` outputs for portable local workflows.
+Competition-only generated datasets and private test splits are distributed
+separately. API credentials and local model outputs are not included in the
+repository.
 
 ## Repository Map
 
@@ -302,6 +288,28 @@ control flow, synthetic constraints, and translation repair.
 
 - [TPC@IJCAI 2026](https://chinatravel-competition.github.io/IJCAI2026/)
 - [TPC@IJCAI 2025](https://chinatravel-competition.github.io/IJCAI2025/)
+
+## Acknowledgements
+
+We thank [Stefan Schneider](https://github.com/stefanbschneider) and Team
+fabiundstefan, including [Fabian Missbrenner](https://github.com/fabufab), for the
+responsible disclosure and careful documentation of evaluator and scoring
+issues. Their reports materially informed the chronology, transport, meal, and
+validity fixes included in this release.
+
+We also thank
+[@450112489](https://github.com/450112489),
+[@zihaocheng-buaa](https://github.com/zihaocheng-buaa),
+[@277CPS](https://github.com/277CPS),
+[@DuanchuWang](https://github.com/DuanchuWang),
+[@evergreenee](https://github.com/evergreenee),
+[@yishu031031](https://github.com/yishu031031), and
+[@luck-lak](https://github.com/luck-lak) for actionable reports on data,
+evaluation, prompts, setup, and documentation. We are additionally grateful to
+[@ploract](https://huggingface.co/ploract) and
+[@lucmek](https://huggingface.co/lucmek) for Hugging Face dataset corrections,
+and to [Niels Rogge](https://github.com/NielsRogge) for encouraging the public
+sandbox release on Hugging Face.
 
 ## Contact
 
