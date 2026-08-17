@@ -388,8 +388,6 @@ if __name__ == "__main__":
 
     method = build_method_name("RuleNeSy", args.llm)
 
-    method = method + "_" + args.llm
-
     os.environ["OPENAI_API_KEY"] = ""
 
     cache_dir = os.path.join(project_root_path, "cache")

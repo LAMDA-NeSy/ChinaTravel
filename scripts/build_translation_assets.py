@@ -129,9 +129,10 @@ def read_json(path):
 
 
 def load_translation_api_config(path):
-    path = Path(path)
+    path = Path(path).expanduser()
     if not path.is_absolute():
         path = PROJECT_ROOT / path
+    path = path.resolve()
     config = read_json(path)
     api = config.get("api")
     translation = config.get("translation")
