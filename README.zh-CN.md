@@ -76,10 +76,8 @@ conda activate chinatravel
 pip install -r requirements.txt
 ```
 
-从 [Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)、
-[Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU)
-或 [南京大学云盘](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/) 下载官方双语沙盒数据，
-并放置为：
+从 [Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
+下载官方双语沙盒数据，并放置为：
 
 ```text
 chinatravel/environment/database/       # 中文沙盒

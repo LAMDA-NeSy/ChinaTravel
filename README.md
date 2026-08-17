@@ -87,9 +87,8 @@ pip install -r requirements.txt
 ```
 
 Download the official bilingual sandbox from
-[Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox),
-[Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU),
-or [NJU Drive](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/), then place it as:
+[Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
+and place it as:
 
 ```text
 chinatravel/environment/database/       # Chinese sandbox
