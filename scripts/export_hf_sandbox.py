@@ -365,7 +365,9 @@ Release version: `{version}`
 
 This dataset contains the bilingual static sandbox used by
 [ChinaTravel](https://github.com/LAMDA-NeSy/ChinaTravel). It is a companion to
-the [ChinaTravel query dataset](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel).
+the [ChinaTravel query dataset](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+and an artifact of the
+[ChinaTravel paper](https://huggingface.co/papers/2412.13682).
 
 The raw ZIP snapshots preserve the exact directory layout expected by the
 ChinaTravel evaluator. Viewer-friendly Parquet configs provide normalized
@@ -413,7 +415,8 @@ Per-source-file checksums and a release manifest are included under
 
 本数据集包含 ChinaTravel 使用的中英文静态沙盒，是
 [ChinaTravel Query 数据集](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
-的配套资源。
+的配套资源，也是
+[ChinaTravel 论文](https://huggingface.co/papers/2412.13682)的关联产物。
 
 `raw/` 中的 ZIP 保留测评代码所需的原始目录结构，是正式运行基准时的权威数据；
 Parquet config 用于 Hub viewer、检索和统计分析。
