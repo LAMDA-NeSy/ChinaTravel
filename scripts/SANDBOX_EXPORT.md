@@ -71,3 +71,27 @@ python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_
 导出目录包含数据库、`FIXES.md`、`manifest.json` 和逐文件 `SHA256SUMS`。导出时会
 验证文件列表、CSV 列和行数保持不变，只有声明的概念字段发生修改，所有非目标文件
 与源文件逐字节一致，并确保没有残留的非规范别名。
+
+## Hugging Face release / Hugging Face 发布包
+
+After producing the fixed English snapshot, `export_hf_sandbox.py` combines it
+with the repository's Chinese database into a bilingual Hugging Face dataset
+release. The output contains evaluator-compatible raw ZIP archives,
+viewer-friendly Parquet configs, checksums, and a dataset card. It does not edit
+either source database.
+
+```bash
+python scripts/export_hf_sandbox.py artifacts/hf_sandbox_release \
+  --english-source artifacts/sandbox/ChinaTravel_sandbox_en_fixed/database_en \
+  --english-metadata-dir artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
+  --release-version 2026.08
+```
+
+Both source directories must have the same relative file layout. The exporter
+also verifies canonical English concept labels, equal bilingual table counts,
+and Parquet round trips before writing `release_manifest.json`.
+
+生成修复版英文快照后，可使用 `export_hf_sandbox.py` 将其与仓库中的中文数据库
+组合成 Hugging Face 双语发布包。输出同时包含兼容测评器目录结构的原始 ZIP、便于
+Hub Viewer 浏览的 Parquet config、校验和、数据卡和发布清单；两个源数据库均不会被
+修改。脚本会检查中英文文件布局、英文概念标签、双语表行数和 Parquet 回读结果。
