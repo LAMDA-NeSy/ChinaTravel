@@ -10,7 +10,8 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
 
 [![项目主页](https://img.shields.io/badge/项目主页-访问-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
 [![论文](https://img.shields.io/badge/论文-查看-red)](https://arxiv.org/abs/2412.13682)
-[![数据集](https://img.shields.io/badge/数据集-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![Query 数据](https://img.shields.io/badge/Query-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![沙盒数据](https://img.shields.io/badge/沙盒-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/竞赛-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
 ## 赛后完整发布
@@ -39,6 +40,8 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
   无效结果计分、双语规范化、确定性加载和性能缓存；
 - 加入重构后的 OpenAI-compatible runtime、双语 Agent 环境、翻译审计与修复流程、
   英文沙盒修复导出工具以及中英文文档。
+- 在 Hugging Face 发布经校验的中文与规范化英文沙盒快照，包含原始压缩包、标准化
+  Parquet config 和校验和。
 - 将机器相关的示例路径替换为仓库相对且已被 Git 忽略的 `artifacts/`，方便在不同
   环境中直接运行。
 
@@ -73,8 +76,9 @@ conda activate chinatravel
 pip install -r requirements.txt
 ```
 
-从 [Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU)
-或 [南京大学云盘](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/) 下载官方沙盒数据，
+从 [Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)、
+[Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU)
+或 [南京大学云盘](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/) 下载官方双语沙盒数据，
 并放置为：
 
 ```text

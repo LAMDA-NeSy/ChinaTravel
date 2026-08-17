@@ -11,7 +11,8 @@ constraints, commonsense validation, and preference-based scoring.
 
 [![Webpage](https://img.shields.io/badge/Webpage-Visit-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
 [![Paper](https://img.shields.io/badge/Paper-View-red)](https://arxiv.org/abs/2412.13682)
-[![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![Queries](https://img.shields.io/badge/Queries-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![Sandbox](https://img.shields.io/badge/Sandbox-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/Competition-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
 ## Post-Competition Release
@@ -49,6 +50,8 @@ model outputs are not committed to this branch.
 - Added the refactored OpenAI-compatible runtime, bilingual agent environment,
   translation audit/repair workflow, fixed English sandbox exporter, and
   Chinese/English documentation.
+- Published the validated Chinese and canonicalized English sandbox snapshots
+  on Hugging Face with raw archives, normalized Parquet configs, and checksums.
 - Replaced machine-specific example paths with repository-relative,
   Git-ignored `artifacts/` outputs for portable local workflows.
 
@@ -83,7 +86,9 @@ conda activate chinatravel
 pip install -r requirements.txt
 ```
 
-Download the official sandbox data from [Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU)
+Download the official bilingual sandbox from
+[Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox),
+[Google Drive](https://drive.google.com/drive/folders/1bJ7jA5cfExO_NKxKfi9qgcxEbkYeSdAU),
 or [NJU Drive](https://box.nju.edu.cn/d/dd83e5a4a9e242ed8eb4/), then place it as:
 
 ```text
