@@ -22,12 +22,16 @@ modifying the benchmark package. Official running and evaluation scripts such as
 
 ## Prerequisites
 
-Install the original project requirements and download the official database as usual:
+Install the project requirements and download the current official sandbox from
+[Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox):
 
 ```bash
 pip install -r requirements.txt
-# unzip the database to chinatravel/environment/database/
+# install database/ and database_en/ under chinatravel/environment/
 ```
+
+Legacy sandbox snapshots are unsupported. The runtime uses entity names and
+concept labels exactly as stored in the installed sandbox.
 
 The wrapper itself can start without those dependencies, but environment tool calls will
 return initialization errors until the official prerequisites are present.

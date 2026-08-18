@@ -154,6 +154,11 @@ We also implement `__str__` method for `EnvOutput` to ensure the string won't be
 
 We also provide orginal APIs for you to use. Import only the tool classes you need.
 
+Use the current official sandbox from
+[Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox).
+Legacy sandbox snapshots are unsupported: API filters and evaluator grounding
+compare entity names and concept labels exactly, without runtime alias rewriting.
+
 For example:
 
 ```python

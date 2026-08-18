@@ -1,6 +1,6 @@
 # Post-Competition Release Validation / 赛后版本验证
 
-Validation date: 2026-08-13
+Validation date: 2026-08-18
 
 ## Automated Checks
 
@@ -9,12 +9,29 @@ python -m unittest discover -s tests -p 'test_*.py' -v
 python -m compileall -q chinatravel agent_env scripts synthetic_query_generation tests
 ```
 
-- Unit regression tests: 38 passed.
+- Unit regression tests: 41 passed.
 - Translation and audit entrypoints: all `--help` imports passed.
 - Example translation configuration: parsed by both translation and audit
   loaders.
 - Fixed sandbox ZIP: passed `unzip -t`; archive SHA-256 is recorded outside the
   repository with the distributed artifact.
+- The installed English sandbox contains no legacy values in attraction `type`,
+  restaurant `cuisine`, or accommodation `featurehoteltype`.
+- Runtime concept-label and POI-name alias rewriting is disabled; the current
+  Hugging Face sandbox is required.
+
+## Generated Data Audit
+
+The 2,000-record Phase 2 dataset was re-audited after removing runtime sandbox
+aliases. The audit used the current canonical English sandbox and current
+`next` code:
+
+- records checked: 2,000;
+- unique signatures: 2,000;
+- constraint coverage: 53 / 53;
+- seed-plan DSL and commonsense failures: 0;
+- audit errors: 0;
+- audit warnings: 0.
 
 ## End-to-End Evaluation
 
@@ -53,7 +70,11 @@ scoring bypass.
 
 ## 中文结论
 
-- 38 项单元回归测试全部通过，所有发布工具均可正常导入。
+- 41 项单元回归测试全部通过，所有发布工具均可正常导入。
+- 运行时已移除英文概念标签和 POI 名称的历史别名替换，必须使用 Hugging Face 当前
+  规范沙盒。
+- 使用当前代码和规范沙盒重新审计 2000 条 Phase 2 数据，53 种约束全部覆盖，seed
+  plan 的 DSL 与常识检查均通过，错误和警告均为 0。
 - UrbanTrip Phase 1 的 1000 条已有结果完成全链路评分，没有中断。
 - 其中 33 条为空行程，28 条的 `itinerary` 不是列表；这些结果均按无效处理，不能获得
   偏好分，不构成评分绕过。

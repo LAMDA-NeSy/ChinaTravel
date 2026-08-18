@@ -280,7 +280,9 @@ def validate_parallel_sources(chinese_root: Path, english_root: Path) -> None:
 
 
 def validate_canonical_english(root: Path) -> None:
-    from chinatravel.environment.concept_labels import ENGLISH_CONCEPT_VALUE_ALIASES
+    from chinatravel.environment.concept_labels import (
+        LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES,
+    )
 
     specs = {
         "attraction": ("attractions/*/attractions.csv", "type"),
@@ -292,7 +294,7 @@ def validate_canonical_english(root: Path) -> None:
     }
     residual: dict[str, list[str]] = {}
     for kind, (pattern, field) in specs.items():
-        aliases = ENGLISH_CONCEPT_VALUE_ALIASES[kind]
+        aliases = LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES[kind]
         values: set[str] = set()
         for path in root.glob(pattern):
             with path.open(encoding="utf-8-sig", newline="") as file_obj:

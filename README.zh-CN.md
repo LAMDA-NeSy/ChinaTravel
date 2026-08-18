@@ -72,6 +72,11 @@ chinatravel/environment/database/       # 中文沙盒
 chinatravel/environment/database_en/    # 英文沙盒
 ```
 
+> [!IMPORTANT]
+> `next` 分支必须配合 Hugging Face 上的当前沙盒版本使用。运行时不再自动修正旧版
+> 英文概念标签或 POI 别名；旧 `database_en` 快照不受支持，可能导致工具返回值不同或
+> 测评失败。Query、plan 和 DSL 中的实体名称必须与安装的沙盒完全一致。
+
 运行时所选语言的沙盒必须存在。为保持向后兼容，标准运行和测评脚本默认使用中文；
 英文数据必须显式传入 `--lang en`。
 
@@ -156,7 +161,7 @@ TPC 测评器会报告 schema、常识、硬约束、FPR 和偏好指标。未�
 - 活动是否按时间顺序排列且不重叠，交通出发时间是否合法；
 - 城际交通是否出现在正确位置，以及位置约束是否错误匹配交通；
 - 免费酒店早餐每天最多计入一次；
-- 中英文概念值是否规范，并兼容必要的历史别名；
+- 实体名称和概念值是否与当前沙盒中的规范值完全一致；
 - DSL 是否安全执行，以及历史单引号 POI 名称是否正确解析。
 
 ## Agent 环境与 Harness
@@ -231,15 +236,15 @@ python scripts/repair_phase1_translations.py
 
 详细说明见[翻译与审计中文文档](scripts/TRANSLATION_PIPELINE.zh-CN.md)。
 
-导出规范化英文沙盒时，不会修改原始数据库：
+维护者如需将旧英文快照迁移为规范发布格式，可使用离线导出工具；它不会修改源数据库：
 
 ```bash
 python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
   --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
-压缩包包含 manifest、修改报告和校验和。见
-[修复版沙盒导出说明](scripts/SANDBOX_EXPORT.md)。
+普通用户应直接下载 Hugging Face 上的当前版本。维护工具生成的压缩包包含 manifest、
+修改报告和校验和，详见[修复版沙盒导出说明](scripts/SANDBOX_EXPORT.md)。
 
 ## 测试
 

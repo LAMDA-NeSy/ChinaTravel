@@ -1,9 +1,7 @@
-"""Canonical labels for concept-valued fields exposed by the sandbox."""
-
-from chinatravel.environment.language import normalize_lang
+"""Legacy label mappings used only by offline sandbox migration and audits."""
 
 
-ENGLISH_CONCEPT_VALUE_ALIASES = {
+LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES = {
     "attraction": {
         "Art Museum": "Art museum",
         "Cultural Attractions": "Cultural Landscape",
@@ -40,15 +38,8 @@ ENGLISH_CONCEPT_VALUE_ALIASES = {
     },
 }
 
-ENGLISH_CONCEPT_LITERAL_ALIASES = {
+LEGACY_ENGLISH_CONCEPT_LITERAL_ALIASES = {
     alias: canonical
-    for aliases in ENGLISH_CONCEPT_VALUE_ALIASES.values()
+    for aliases in LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES.values()
     for alias, canonical in aliases.items()
 }
-
-
-def normalize_concept_value(kind, value, lang="en"):
-    if normalize_lang(lang) != "en" or not isinstance(value, str):
-        return value
-    stripped = value.strip()
-    return ENGLISH_CONCEPT_VALUE_ALIASES.get(kind, {}).get(stripped, stripped)

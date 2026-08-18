@@ -1,54 +1,22 @@
 import unittest
 
 from chinatravel.environment.concept_labels import (
-    ENGLISH_CONCEPT_VALUE_ALIASES,
-    normalize_concept_value as normalize_sandbox_concept_value,
+    LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES,
 )
 from chinatravel.environment.tools.accommodations.apis import Accommodations
 from chinatravel.environment.tools.attractions.apis import Attractions
 from chinatravel.environment.tools.restaurants.apis import Restaurants
 from chinatravel.symbol_verification.concept_func import (
+    activity_position,
     innercity_transport_cost,
     innercity_transport_distance,
     innercity_transport_time,
-    normalize_concept_constraint_source,
-    normalize_concept_value,
-    set_concept_func_lang,
 )
 from chinatravel.symbol_verification.hard_constraint import evaluate_constraints_py
 
 
-class ConceptNormalizationTests(unittest.TestCase):
-    def tearDown(self):
-        set_concept_func_lang("zh")
-
-    def test_symbolic_and_sandbox_normalization_share_aliases(self):
-        set_concept_func_lang("en")
-
-        self.assertEqual(normalize_concept_value("restaurant", "cafe"), "coffee shop")
-        self.assertEqual(
-            normalize_sandbox_concept_value(
-                "attraction", "university campus", "en"
-            ),
-            "University campus",
-        )
-        self.assertEqual(
-            normalize_sandbox_concept_value("accommodation", "Swimming pool", "zh"),
-            "Swimming pool",
-        )
-
-    def test_constraint_literals_use_the_shared_alias_dictionary(self):
-        source = (
-            'result=({"cafe", "university campus", "Swimming pool"} '
-            "<= concept_values)"
-        )
-        normalized = normalize_concept_constraint_source(source)
-
-        self.assertIn('"coffee shop"', normalized)
-        self.assertIn('"University campus"', normalized)
-        self.assertIn('"Swimming Pool"', normalized)
-
-    def test_english_environment_exposes_only_canonical_values(self):
+class CanonicalSandboxContractTests(unittest.TestCase):
+    def test_installed_english_sandbox_contains_no_legacy_concept_labels(self):
         cases = (
             (Attractions(lang="en"), "type", "attraction"),
             (Restaurants(lang="en"), "cuisine", "restaurant"),
@@ -56,18 +24,22 @@ class ConceptNormalizationTests(unittest.TestCase):
         )
 
         for tool, column, kind in cases:
-            aliases = ENGLISH_CONCEPT_VALUE_ALIASES[kind]
+            legacy_values = set(LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES[kind])
             with self.subTest(kind=kind):
                 for table in tool.data.values():
                     values = set(table[column].dropna())
-                    self.assertTrue(values.isdisjoint(aliases))
-                    self.assertEqual(
-                        values,
-                        {
-                            normalize_sandbox_concept_value(kind, value, "en")
-                            for value in values
-                        },
-                    )
+                    self.assertTrue(values.isdisjoint(legacy_values))
+
+    def test_poi_names_are_not_rewritten_at_runtime(self):
+        activity = {"type": "lunch", "position": "Bistro Sola"}
+        self.assertEqual(activity_position(activity), "Bistro Sola")
+
+    def test_legacy_concept_literals_are_not_rewritten_at_runtime(self):
+        plan = {"itinerary": [], "people_number": 1}
+        self.assertEqual(
+            evaluate_constraints_py(['result=("cafe"=="coffee shop")'], plan),
+            [False],
+        )
 
 
 class InnerCityTransportHelperTests(unittest.TestCase):

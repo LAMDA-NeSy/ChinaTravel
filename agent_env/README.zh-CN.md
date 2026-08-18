@@ -27,6 +27,9 @@ chinatravel/environment/database/       # zh
 chinatravel/environment/database_en/    # en
 ```
 
+必须使用 [Hugging Face 当前官方沙盒](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)。
+旧沙盒快照不受支持；运行时会直接使用沙盒中的实体名称和概念标签，不再自动替换历史别名。
+
 ## CLI
 
 列出工具并进行结构化调用：

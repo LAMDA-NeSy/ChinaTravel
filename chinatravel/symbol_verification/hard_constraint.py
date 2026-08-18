@@ -6,8 +6,6 @@ from chinatravel.environment.language import CITY_NAMES, normalize_lang
 
 from chinatravel.symbol_verification.concept_func import (
     func_dict,
-    normalize_concept_constraint_source,
-    normalize_poi_name,
     set_concept_func_lang,
 )
 from chinatravel.symbol_verification.dsl import evaluate_expression, execute_dsl_code
@@ -244,7 +242,7 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
 
             if not "position" in activity:
                 continue
-            position = normalize_poi_name(activity["position"])
+            position = activity["position"]
 
             if (
                 activity["type"] == "breakfast"
@@ -483,7 +481,6 @@ for activity in allactivities(plan):
     # hard_logic_py.append(debug_logic_py)
     for constraint in hard_logic_py:
         original_constraint = constraint
-        constraint = normalize_concept_constraint_source(constraint)
         constraint = _normalize_legacy_hard_logic_py(constraint)
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = plan

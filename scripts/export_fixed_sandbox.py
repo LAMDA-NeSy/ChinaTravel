@@ -20,7 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from chinatravel.environment.concept_labels import (  # noqa: E402
-    ENGLISH_CONCEPT_VALUE_ALIASES,
+    LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES,
 )
 
 
@@ -38,9 +38,6 @@ DATASET_SPECS = {
         "pattern": "accommodations/*/accommodations.csv",
         "field": "featurehoteltype",
     },
-}
-COMPATIBILITY_ONLY_POI_ALIASES = {
-    "Bistro Sola": "Sola Bistro",
 }
 IGNORED_NAMES = {".DS_Store", "__pycache__"}
 
@@ -177,7 +174,7 @@ def validate_release(source_root: Path, output_database: Path) -> dict[str, obje
     row_counts: dict[str, int] = {}
     residual_aliases: dict[str, list[str]] = {}
     for kind, spec in DATASET_SPECS.items():
-        aliases = ENGLISH_CONCEPT_VALUE_ALIASES[kind]
+        aliases = LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES[kind]
         total_rows = 0
         residual_values: set[str] = set()
         for output_path in sorted(output_database.glob(spec["pattern"])):
@@ -220,7 +217,7 @@ def build_fix_entries(
     aggregate_cities: dict[str, dict[tuple[str, str], set[str]]],
 ) -> list[dict[str, object]]:
     entries: list[dict[str, object]] = []
-    for kind, aliases in ENGLISH_CONCEPT_VALUE_ALIASES.items():
+    for kind, aliases in LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES.items():
         for source_value, canonical_value in aliases.items():
             pair = (source_value, canonical_value)
             entries.append(
@@ -284,15 +281,14 @@ def write_fixes(
     lines.extend(
         [
             "",
-            "Rules with zero changed rows are retained as compatibility aliases",
-            "for generated DSL, but no matching value existed in this database snapshot.",
+            "Rules with zero changed rows are retained as migration checks, but no",
+            "matching value existed in this database snapshot.",
             "",
-            "## POI Name Compatibility",
+            "## POI Name Contract",
             "",
             "The database already stores `Sola Bistro` consistently in both the",
-            "Shanghai restaurant table and POI index. The evaluator separately maps",
-            "the mistranslated query value `Bistro Sola` to `Sola Bistro`; therefore",
-            "this static export does not modify or duplicate that POI row.",
+            "Shanghai restaurant table and POI index. Queries and plans must use that",
+            "canonical name exactly; this export does not add an alias or duplicate row.",
             "",
             "## Validation",
             "",
@@ -358,7 +354,7 @@ def export_release(source_root: Path, release_root: Path) -> dict[str, object]:
             _, changes, cities = rewrite_csv(
                 path,
                 field=spec["field"],
-                aliases=ENGLISH_CONCEPT_VALUE_ALIASES[kind],
+                aliases=LEGACY_ENGLISH_CONCEPT_VALUE_ALIASES[kind],
             )
             kind_changes.update(changes)
             for pair, city_names in cities.items():
@@ -379,7 +375,6 @@ def export_release(source_root: Path, release_root: Path) -> dict[str, object]:
         "rewritten_files": rewritten_files,
         "changed_rows": sum(int(entry["changed_rows"]) for entry in fix_entries),
         "fixes": fix_entries,
-        "compatibility_only_poi_aliases": COMPATIBILITY_ONLY_POI_ALIASES,
         "validation": validation,
     }
     (release_root / "manifest.json").write_text(

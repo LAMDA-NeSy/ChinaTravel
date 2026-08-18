@@ -81,6 +81,13 @@ chinatravel/environment/database/       # Chinese sandbox
 chinatravel/environment/database_en/    # English sandbox
 ```
 
+> [!IMPORTANT]
+> The `next` branch requires the current Hugging Face sandbox release. It does
+> not rewrite legacy English concept labels or POI aliases at runtime. Older
+> `database_en` snapshots are unsupported and can produce different tool output
+> or evaluation failures. Query, plan, and DSL entity names must match the
+> installed sandbox exactly.
+
 The requested language must exist locally. The standard run/evaluation scripts
 default to Chinese for backward compatibility; pass `--lang en` explicitly for
 English data.
@@ -172,7 +179,7 @@ The hardened evaluator additionally enforces:
   ordering;
 - valid intercity transport placement and type-independent position handling;
 - at most one hotel breakfast per day for the free-breakfast exception;
-- canonical bilingual concept values and temporary legacy aliases;
+- exact entity names and canonical concept values from the installed sandbox;
 - safe DSL execution and legacy apostrophe normalization.
 
 ## Agent Environment and Harness
@@ -251,15 +258,17 @@ python scripts/repair_phase1_translations.py
 
 See [Translation and Audit Pipeline](scripts/TRANSLATION_PIPELINE.md).
 
-To export canonicalized English sandbox data without modifying the source:
+For maintainers migrating a legacy English snapshot into the canonical release
+format, the offline exporter can be run without modifying its source:
 
 ```bash
 python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_fixed \
   --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
-The archive contains a manifest, change report, and checksums. See
-[Fixed Sandbox Export](scripts/SANDBOX_EXPORT.md).
+Normal users should download the current Hugging Face release instead. The
+archive produced by this maintenance tool contains a manifest, change report,
+and checksums. See [Fixed Sandbox Export](scripts/SANDBOX_EXPORT.md).
 
 ## Tests
 

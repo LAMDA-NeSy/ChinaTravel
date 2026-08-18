@@ -7,7 +7,6 @@ from chinatravel.environment.tools.attractions.apis import Attractions
 from chinatravel.environment.tools.intercity_transport.apis import IntercityTransport
 from chinatravel.environment.tools.transportation.apis import Transportation
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
-from chinatravel.symbol_verification.concept_func import normalize_poi_name
 
 # from env.tools.transportation.apis import GoTo
 # from envs import goto
@@ -502,7 +501,7 @@ def Is_attractions_correct(symbolic_input, plan_json, verbose=False):
                 error_info.append("No position information!")
                 return table_statistics, error_info
             
-            position = normalize_poi_name(activity_i["position"])
+            position = activity_i["position"]
             select_attraction=attractions.select(target_city,key='name',func=lambda x:x==position)
 
             # print(select_attraction)
@@ -609,7 +608,7 @@ def Is_hotels_correct(symbolic_input, plan_json, verbose=False):
                 error_info.append("No position information!")
                 return table_statistics, error_info
             
-            position = normalize_poi_name(activity_i["position"])
+            position = activity_i["position"]
             select_hotel=accommodation.select(target_city,key='name',func=lambda x:x==position)
             # print(select_hotel)
 
@@ -714,7 +713,7 @@ def Is_restaurants_correct(symbolic_input, plan_json, verbose=False):
                 return table_statistics, error_info
             
 
-            position = normalize_poi_name(activity_i["position"])
+            position = activity_i["position"]
             select_restaurant=restaurants.select(target_city,key='name',func=lambda x:x==position)
 
             # print(select_restaurant)
@@ -867,8 +866,8 @@ def Is_transport_correct(symbolic_input, plan_json, verbose=False):
                     table_statistics.loc[0] = [1, 1, 1]
                     error_info.append("Key Error: [start, end, start_time, end_time]")
                 
-                source_poi = normalize_poi_name(transport_i[0]["start"])
-                target_poi = normalize_poi_name(transport_i[-1]["end"])
+                source_poi = transport_i[0]["start"]
+                target_poi = transport_i[-1]["end"]
                 start_time = transport_i[0]["start_time"]
 
                 # print(transport_i)
@@ -890,11 +889,11 @@ def Is_transport_correct(symbolic_input, plan_json, verbose=False):
                     for idx, trans_ii in enumerate(transport_i):
                         
                         try:
-                            if normalize_poi_name(trans_ii["start"]) != normalize_poi_name(tools_return[idx]["start"]):
+                            if trans_ii["start"] != tools_return[idx]["start"]:
                                 table_statistics.loc[0,  'Unavailable Inner-City Transport'] = 1
                                 error_info.append("Incorrect infomation of transport {} -> {}".format(source_poi, target_poi) + "  [{}], Tool: [{}]".format(trans_ii, tools_return[idx]))
                         
-                            if normalize_poi_name(trans_ii["end"]) != normalize_poi_name(tools_return[idx]["end"]):
+                            if trans_ii["end"] != tools_return[idx]["end"]:
                                 table_statistics.loc[0,  'Unavailable Inner-City Transport'] = 1
                                 error_info.append("Incorrect infomation of transport {} -> {}".format(source_poi, target_poi) + "  [{}], Tool: [{}]".format(trans_ii, tools_return[idx]))
                         except:
@@ -971,11 +970,11 @@ def Is_transport_correct(symbolic_input, plan_json, verbose=False):
                         continue
                     for idx, trans_ii in enumerate(transport_i):
                         try:
-                            if normalize_poi_name(trans_ii["start"]) != normalize_poi_name(tools_return[idx]["start"]):
+                            if trans_ii["start"] != tools_return[idx]["start"]:
                                 table_statistics.loc[0,  'Unavailable Inner-City Transport'] = 1
                                 error_info.append("Incorrect infomation of transport {} -> {}".format(source_poi, target_poi) + "  [{}], Tool: [{}]".format(trans_ii, tools_return[idx]))
                         
-                            if normalize_poi_name(trans_ii["end"]) != normalize_poi_name(tools_return[idx]["end"]):
+                            if trans_ii["end"] != tools_return[idx]["end"]:
                                 table_statistics.loc[0,  'Unavailable Inner-City Transport'] = 1
                                 error_info.append("Incorrect infomation of transport {} -> {}".format(source_poi, target_poi) + "  [{}], Tool: [{}]".format(trans_ii, tools_return[idx]))
                         except:
@@ -1171,14 +1170,14 @@ def Is_space_correct(symbolic_input, plan_json, verbose=False):
                     error_info.append("Only intercity transport may omit position: " + str(activity_i))
                     continue
                 if "start" in activity_i and "end" in activity_i:
-                    current_position = normalize_poi_name(activity_i["start"])
+                    current_position = activity_i["start"]
                 else:
                     table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
                     error_info.append("Every activity need a position or start/end keys: " + str(activity_i))
                     continue
 
             else:
-                current_position = normalize_poi_name(activity_i["position"])
+                current_position = activity_i["position"]
 
             if not "transports" in activity_i:
                 # print(activity_i)
@@ -1204,13 +1203,13 @@ def Is_space_correct(symbolic_input, plan_json, verbose=False):
                     # continue
 
                 else:
-                    if normalize_poi_name(activity_i["transports"][0]["start"]) != position_list[-1]:
+                    if activity_i["transports"][0]["start"] != position_list[-1]:
 
                         table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
                         error_info.append("The origin of the transport must be equal to the position of the previous activity.: " + str(activity_i))
                         # continue
 
-                    if normalize_poi_name(activity_i["transports"][-1]["end"]) != position_i:
+                    if activity_i["transports"][-1]["end"] != position_i:
 
                         table_statistics.loc[0, 'Invalid Transport information across positions'] = 1
                         error_info.append("The destination of the transport must be equal to the position of the current activity.: " + str(activity_i))
@@ -1223,9 +1222,9 @@ def Is_space_correct(symbolic_input, plan_json, verbose=False):
                 )
 
             if "position" in activity_i:
-                position_list.append(normalize_poi_name(activity_i["position"]))
+                position_list.append(activity_i["position"])
             else:
-                position_list.append(normalize_poi_name(activity_i["end"]))
+                position_list.append(activity_i["end"])
 
     # print("position_list: ", position_list)
 

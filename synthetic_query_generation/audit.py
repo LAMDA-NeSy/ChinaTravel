@@ -13,7 +13,7 @@ except ImportError:
     tqdm = None
 
 from chinatravel.environment.concept_labels import (
-    ENGLISH_CONCEPT_LITERAL_ALIASES,
+    LEGACY_ENGLISH_CONCEPT_LITERAL_ALIASES,
 )
 from chinatravel.environment.tools.accommodations.apis import Accommodations
 from chinatravel.environment.tools.attractions.apis import Attractions
@@ -60,7 +60,7 @@ def _sandbox_alias_errors():
         values = set()
         for frame in tool.data.values():
             values.update(frame[field].dropna().astype(str))
-        aliases = set(ENGLISH_CONCEPT_LITERAL_ALIASES) & values
+        aliases = set(LEGACY_ENGLISH_CONCEPT_LITERAL_ALIASES) & values
         if aliases:
             errors.append(
                 "Sandbox {} field still exposes aliases: {}".format(
@@ -209,7 +209,8 @@ def audit_dataset(dataset_dir, expected_records, profile, lang="en"):
                 tag_counts.update(tags[index])
             examples.setdefault(key, {"uid": uid, "dsl": code, "nl": text})
             alias_literals = sorted(
-                set(_string_literals(code)) & set(ENGLISH_CONCEPT_LITERAL_ALIASES)
+                set(_string_literals(code))
+                & set(LEGACY_ENGLISH_CONCEPT_LITERAL_ALIASES)
             )
             if alias_literals:
                 errors.append(

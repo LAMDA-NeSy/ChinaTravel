@@ -48,7 +48,6 @@ def _concept_functions():
         accommodation_type,
         attraction_type,
         innercity_transport_type,
-        normalize_poi_name,
         restaurant_type,
     )
 
@@ -56,7 +55,6 @@ def _concept_functions():
         "accommodation_type": accommodation_type,
         "attraction_type": attraction_type,
         "innercity_transport_type": innercity_transport_type,
-        "normalize_poi_name": normalize_poi_name,
         "restaurant_type": restaurant_type,
     }
 
@@ -117,9 +115,7 @@ def collect_entity_context(plan, lang):
     type_values = {"attraction": [], "restaurant": [], "accommodation": []}
 
     for day_idx, activity in iter_day_activities(plan):
-        position = concept_functions["normalize_poi_name"](
-            activity_position(activity)
-        )
+        position = activity_position(activity)
         if not position:
             continue
         activity_type_value = activity.get("type")
@@ -552,7 +548,6 @@ def make_name_and_type_constraints(context):
 def make_count_constraints(context):
     plan = context.plan
     rng = context.rng
-    normalize_poi_name = _concept_functions()["normalize_poi_name"]
     constraints = []
     attraction_count = 0
     free_attraction_count = 0
@@ -579,7 +574,7 @@ def make_count_constraints(context):
             elif activity_type_value in MEAL_TYPES:
                 meals_on_day.add(activity_type_value)
             elif activity_type_value == "accommodation":
-                position = normalize_poi_name(activity.get("position", ""))
+                position = activity.get("position", "")
                 if position:
                     accommodation_names.add(position)
         if attractions_on_day:
@@ -951,7 +946,6 @@ def make_sequence_constraints(context):
 def make_relation_constraints(context):
     plan = context.plan
     rng = context.rng
-    normalize_poi_name = _concept_functions()["normalize_poi_name"]
     constraints = []
     attractions_by_day = {}
 
@@ -996,7 +990,7 @@ def make_relation_constraints(context):
     ordered_items = []
     for _, activity in iter_day_activities(plan):
         kind = kind_by_type.get(activity.get("type"))
-        position = normalize_poi_name(activity.get("position", ""))
+        position = activity.get("position", "")
         if kind and position:
             ordered_items.append({"kind": kind, "position": position})
 

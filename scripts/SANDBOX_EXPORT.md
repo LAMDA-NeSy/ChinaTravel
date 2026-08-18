@@ -25,9 +25,9 @@ The exporter canonicalizes only these fields:
 
 This includes known casing and synonym mismatches such as `cafe` versus
 `coffee shop`, `university campus` versus `University campus`, and
-`Swimming pool` versus `Swimming Pool`. `Bistro Sola` is handled as a runtime
-compatibility alias for the canonical POI name `Sola Bistro`; the static row is
-already canonical and is not duplicated.
+`Swimming pool` versus `Swimming Pool`. The static data already stores the POI
+name `Sola Bistro`; queries and plans must use that name exactly. No runtime POI
+alias is installed and no duplicate row is created.
 
 Output layout:
 
@@ -65,8 +65,9 @@ python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_
 - 酒店 `featurehoteltype`。
 
 修复包括 `cafe`/`coffee shop`、`university campus`/`University campus`、
-`Swimming pool`/`Swimming Pool` 等同义或大小写不一致。`Bistro Sola` 在运行时映射为
-权威名称 `Sola Bistro`；静态沙盒中该 POI 已经正确，因此不会新增重复行。
+`Swimming pool`/`Swimming Pool` 等同义或大小写不一致。静态沙盒已经使用权威 POI
+名称 `Sola Bistro`；Query 和 plan 必须精确使用该名称。运行时不提供 POI 别名，也不会
+新增重复数据行。
 
 导出目录包含数据库、`FIXES.md`、`manifest.json` 和逐文件 `SHA256SUMS`。导出时会
 验证文件列表、CSV 列和行数保持不变，只有声明的概念字段发生修改，所有非目标文件
