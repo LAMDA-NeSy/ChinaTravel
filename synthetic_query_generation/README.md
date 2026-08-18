@@ -315,6 +315,9 @@ JSONL exporter:
 PYTHONPATH=. python scripts/export_phase2_hf.py \
   --dataset-dir artifacts/phase2_complete \
   --output artifacts/phase2_hf/phase2.csv \
+  --official-eval-output artifacts/phase2_hf/competition_test.csv \
+  --official-eval-uids artifacts/phase2_competition_test_uids.txt \
+  --expected-official 100 \
   --report artifacts/phase2_hf/phase2_audit_report.json \
   --expected-records 2000 \
   --records-per-shard 1000

@@ -382,6 +382,10 @@ def main(argv=None):
     parser.add_argument("--report", required=True)
     parser.add_argument("--expected-records", type=int, default=2000)
     parser.add_argument("--official-eval-uids")
+    parser.add_argument(
+        "--official-eval-output",
+        help="Optional .csv or .jsonl file containing only official evaluation rows.",
+    )
     parser.add_argument("--expected-official", type=int)
     parser.add_argument("--source-audit-report")
     parser.add_argument(
@@ -391,6 +395,8 @@ def main(argv=None):
         help="Write part files under <output-jsonl stem>/ instead of one JSONL file.",
     )
     args = parser.parse_args(argv)
+    if args.official_eval_output and not args.official_eval_uids:
+        parser.error("--official-eval-output requires --official-eval-uids")
 
     paths = source_paths(args.dataset_dir)
     missing = [str(path) for path in paths if not path.is_file()]
@@ -454,6 +460,25 @@ def main(argv=None):
     output_paths, combined_sha256 = write_rows(
         rows, output_path, args.records_per_shard
     )
+    official_output = None
+    if args.official_eval_output:
+        official_rows = [row for row in rows if row["official_phase2_evaluation"]]
+        official_output_path = Path(args.official_eval_output)
+        official_paths, official_canonical_sha256 = write_rows(
+            official_rows, official_output_path
+        )
+        official_output = {
+            "output_files": [
+                str(path.relative_to(official_output_path.parent))
+                for path in official_paths
+            ],
+            "output_file_sha256": {
+                str(path.relative_to(official_output_path.parent)): sha256(path)
+                for path in official_paths
+            },
+            "canonical_jsonl_sha256": official_canonical_sha256,
+            "records": len(official_rows),
+        }
     report.update(
         {
             "output_files": [
@@ -472,6 +497,8 @@ def main(argv=None):
             "generation_paths_included": False,
         }
     )
+    if official_output is not None:
+        report["official_evaluation_export"] = official_output
     report_path = Path(args.report)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(
@@ -482,6 +509,12 @@ def main(argv=None):
             len(rows), len(output_paths), output_path.parent
         )
     )
+    if official_output is not None:
+        print(
+            "Wrote {} official evaluation records to {}".format(
+                official_output["records"], args.official_eval_output
+            )
+        )
     print("Audit report: {}".format(report_path))
 
 
