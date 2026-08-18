@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import csv
 import hashlib
 import json
 import re
@@ -306,48 +307,78 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def write_rows(rows, output_path, records_per_shard=0):
-    output_path = Path(output_path)
-    encoded_rows = [
+def _canonical_jsonl(rows):
+    return [
         (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode(
             "utf-8"
         )
         for row in rows
     ]
+
+
+def _csv_value(value):
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return value
+
+
+def write_rows(rows, output_path, records_per_shard=0):
+    output_path = Path(output_path)
+    if output_path.suffix not in {".jsonl", ".csv"}:
+        raise ValueError("Output must end in .jsonl or .csv")
+    encoded_rows = _canonical_jsonl(rows)
     combined_digest = hashlib.sha256()
     for encoded in encoded_rows:
         combined_digest.update(encoded)
 
     if not records_per_shard:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with output_path.open("wb") as handle:
-            handle.writelines(encoded_rows)
+        _write_output_file(output_path, rows, encoded_rows)
         return [output_path], combined_digest.hexdigest()
 
     shard_dir = output_path.parent / output_path.stem
     shard_dir.mkdir(parents=True, exist_ok=True)
     shard_count = (len(encoded_rows) + records_per_shard - 1) // records_per_shard
     expected_paths = [
-        shard_dir / "part-{:05d}.jsonl".format(index)
+        shard_dir / "part-{:05d}{}".format(index, output_path.suffix)
         for index in range(shard_count)
     ]
-    unexpected = sorted(set(shard_dir.glob("*.jsonl")) - set(expected_paths))
+    unexpected = sorted(set(shard_dir.glob("part-*")) - set(expected_paths))
     if unexpected:
         raise ValueError(
-            "Shard directory contains stale JSONL files: {}".format(unexpected)
+            "Shard directory contains stale part files: {}".format(unexpected)
         )
     for index, path in enumerate(expected_paths):
         start = index * records_per_shard
         end = start + records_per_shard
-        with path.open("wb") as handle:
-            handle.writelines(encoded_rows[start:end])
+        _write_output_file(path, rows[start:end], encoded_rows[start:end])
     return expected_paths, combined_digest.hexdigest()
+
+
+def _write_output_file(path, rows, encoded_rows):
+    if path.suffix == ".jsonl":
+        with path.open("wb") as handle:
+            handle.writelines(encoded_rows)
+        return
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=PUBLIC_FIELDS, lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: _csv_value(row[key]) for key in PUBLIC_FIELDS})
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-dir", required=True)
-    parser.add_argument("--output-jsonl", required=True)
+    parser.add_argument(
+        "--output",
+        "--output-jsonl",
+        dest="output",
+        required=True,
+        help="Public .csv or .jsonl output path; --output-jsonl is a legacy alias.",
+    )
     parser.add_argument("--report", required=True)
     parser.add_argument("--expected-records", type=int, default=2000)
     parser.add_argument("--official-eval-uids")
@@ -419,7 +450,7 @@ def main(argv=None):
         )
         raise SystemExit("Phase 2 release audit failed; see {}".format(args.report))
 
-    output_path = Path(args.output_jsonl)
+    output_path = Path(args.output)
     output_paths, combined_sha256 = write_rows(
         rows, output_path, args.records_per_shard
     )
@@ -432,7 +463,10 @@ def main(argv=None):
                 str(path.relative_to(output_path.parent)): sha256(path)
                 for path in output_paths
             },
-            "combined_jsonl_sha256": combined_sha256,
+            "canonical_jsonl_sha256": combined_sha256,
+            "list_field_encoding": (
+                "JSON text" if output_path.suffix == ".csv" else "native JSON arrays"
+            ),
             "public_fields": list(PUBLIC_FIELDS),
             "seed_plans_included": False,
             "generation_paths_included": False,

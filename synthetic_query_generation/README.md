@@ -314,7 +314,7 @@ JSONL exporter:
 ```bash
 PYTHONPATH=. python scripts/export_phase2_hf.py \
   --dataset-dir artifacts/phase2_complete \
-  --output-jsonl artifacts/phase2_hf/phase2.jsonl \
+  --output artifacts/phase2_hf/phase2.csv \
   --report artifacts/phase2_hf/phase2_audit_report.json \
   --expected-records 2000 \
   --records-per-shard 1000
