@@ -11,6 +11,7 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
 [![项目主页](https://img.shields.io/badge/项目主页-访问-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
 [![论文](https://img.shields.io/badge/论文-查看-red)](https://openreview.net/forum?id=0YRVlxY9BH)
 [![Query 数据](https://img.shields.io/badge/Query-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![Query 数据](https://img.shields.io/badge/Query-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)
 [![沙盒数据](https://img.shields.io/badge/沙盒-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/竞赛-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
@@ -27,11 +28,21 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
   导出流程；
 - 中译英 DSL/Query 翻译，包括规则与 LLM 联合审计、选择性修复、保守重审和人工
   裁决流程；
-- 可复现的规范化英文沙盒导出，以及包含原始压缩包、Parquet config 和校验和的
-  Hugging Face 双语发布；
+- 可复现的规范化英文沙盒导出、同步发布于 Hugging Face 和魔搭的 Query 数据，
+  以及发布校验和；
 - 使用仓库相对且已被 Git 忽略的 `artifacts/` 目录，便于在不同环境中运行本地流程。
 
 比赛专用的生成数据和私有测试 split 另行分发。仓库不包含 API 密钥或本地模型输出。
+
+## 数据发布
+
+| 资源 | Hugging Face | 魔搭 |
+| --- | --- | --- |
+| Query 数据集 | [LAMDA-NeSy/ChinaTravel](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel) | [Cbphcr/ChinaTravel](https://modelscope.cn/datasets/Cbphcr/ChinaTravel) |
+| 双语沙盒 | [LAMDA-NeSy/ChinaTravel-Sandbox](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox) | 暂未镜像 |
+
+魔搭 Query 仓库镜像官方 Hugging Face Query 数据。两处均提供 Phase 1 splits，以及
+完整的 2,000 条 `TPC2026_phase2` 数据和其中 100 条 `competition_test` split。
 
 ## 目录结构
 

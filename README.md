@@ -12,6 +12,7 @@ constraints, commonsense validation, and preference-based scoring.
 [![Webpage](https://img.shields.io/badge/Webpage-Visit-blue)](https://www.lamda.nju.edu.cn/shaojj/chinatravel/)
 [![Paper](https://img.shields.io/badge/Paper-View-red)](https://openreview.net/forum?id=0YRVlxY9BH)
 [![Queries](https://img.shields.io/badge/Queries-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
+[![Queries](https://img.shields.io/badge/Queries-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)
 [![Sandbox](https://img.shields.io/badge/Sandbox-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/Competition-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 
@@ -32,14 +33,25 @@ tooling developed during and after TPC@IJCAI 2026:
   sampling, independent audit, and query-only release export;
 - Chinese-to-English DSL/query translation with rule and LLM audit, selective
   repair, conservative re-audit, and human-adjudication workflows;
-- reproducible export of canonicalized English sandbox data and bilingual
-  Hugging Face releases with raw archives, Parquet configs, and checksums;
+- reproducible export of canonicalized English sandbox data, synchronized query
+  releases on Hugging Face and ModelScope, and release checksums;
 - repository-relative, Git-ignored `artifacts/` outputs for portable local
   workflows.
 
 Competition-only generated datasets and private test splits are distributed
 separately. API credentials and local model outputs are not included in the
 repository.
+
+## Data Releases
+
+| Resource | Hugging Face | ModelScope |
+| --- | --- | --- |
+| Query dataset | [LAMDA-NeSy/ChinaTravel](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel) | [Cbphcr/ChinaTravel](https://modelscope.cn/datasets/Cbphcr/ChinaTravel) |
+| Bilingual sandbox | [LAMDA-NeSy/ChinaTravel-Sandbox](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox) | Not currently mirrored |
+
+The ModelScope query repository mirrors the official Hugging Face query
+release. Both provide the Phase 1 splits and the complete 2,000-query
+`TPC2026_phase2` config, including its 100-query `competition_test` split.
 
 ## Repository Map
 
