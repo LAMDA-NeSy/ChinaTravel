@@ -36,6 +36,7 @@ Query。生成代码、约束模板和审计工具已公开，但生成后的比
 | `validation.py` | 硬约束和常识验证包装 |
 | `audit.py` | 独立数据审计 |
 | `export_release.py` | 只包含公开 Query 字段的导出 |
+| `release_wording.py` | 幂等的赛后英文表述澄清 |
 
 ## 生成基础 Query
 
@@ -149,3 +150,19 @@ python -m synthetic_query_generation.export_release \
 ```
 
 seed plan、生成元数据和源路径不会进入 release 目录。
+
+完整 Phase 2 数据发布到 Hugging Face 前，使用更严格的 JSONL 导出器：
+
+```bash
+PYTHONPATH=. python scripts/export_phase2_hf.py \
+  --dataset-dir artifacts/phase2_complete \
+  --output-jsonl artifacts/phase2_hf/phase2.jsonl \
+  --report artifacts/phase2_hf/phase2_audit_report.json \
+  --expected-records 2000 \
+  --records-per-shard 1000
+```
+
+该导出器会明确包含式 OR、人民币单位、市内交通作用范围、按主交通方式统计的
+行程次数以及活动必须完整落入时间窗的语义。仅当 OR 的某个原子分支已经作为同一
+Query 的独立硬约束出现时，才删除该冗余 OR；这一逻辑恒等变换不会改变可行 plan
+集合。新的采样流程会在选约束阶段直接避免此类 OR/原子分支组合。

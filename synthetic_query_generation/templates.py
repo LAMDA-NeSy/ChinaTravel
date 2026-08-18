@@ -74,8 +74,8 @@ TEMPLATE_CATALOG = {
     },
     "inner_transport_modes_subset": {
         "category": "transport",
-        "en": "Use only {transport_modes} for transportation within the destination city.",
-        "zh": "目的地城市内只能使用{transport_modes}出行。",
+        "en": "Use only {transport_modes} as the primary modes of in-city journeys throughout the itinerary.",
+        "zh": "整个行程中的市内出行只能使用{transport_modes}作为主交通方式。",
     },
     "taxi_cars": {
         "category": "transport",
@@ -89,8 +89,8 @@ TEMPLATE_CATALOG = {
     },
     "inner_transport_mode_count": {
         "category": "transport",
-        "en": "The itinerary must contain exactly {count} in-city {transport_mode} journeys.",
-        "zh": "行程中必须恰好包含{count}次{transport_mode}行程。",
+        "en": "Use {transport_mode} as the primary mode for exactly {count} in-city journeys.",
+        "zh": "整个行程中必须恰好有{count}次市内出行以{transport_mode}为主交通方式。",
     },
     "walking_distance_budget": {
         "category": "transport",
@@ -99,8 +99,8 @@ TEMPLATE_CATALOG = {
     },
     "innercity_travel_time_budget": {
         "category": "transport",
-        "en": "Keep the total time spent on in-city transportation within {limit} minutes.",
-        "zh": "市内交通总耗时不得超过{limit}分钟。",
+        "en": "Keep the total duration of all in-city transport segments within {limit} minutes.",
+        "zh": "整个行程中所有市内交通路段的总耗时不得超过{limit}分钟。",
     },
     "required_attraction_names": {
         "category": "attraction",
@@ -174,18 +174,18 @@ TEMPLATE_CATALOG = {
     },
     "attraction_time_window": {
         "category": "attraction",
-        "en": "Visit {name} between {start_time} and {end_time}.",
-        "zh": "必须在{start_time}到{end_time}之间安排{name}。",
+        "en": "Schedule the entire visit to {name} within the time window from {start_time} to {end_time}.",
+        "zh": "必须将{name}的完整游览时间安排在{start_time}到{end_time}的时间窗内。",
     },
     "restaurant_time_window": {
         "category": "restaurant",
-        "en": "Dine at {name} between {start_time} and {end_time}.",
-        "zh": "必须在{start_time}到{end_time}之间安排{name}。",
+        "en": "Schedule the entire meal at {name} within the time window from {start_time} to {end_time}.",
+        "zh": "必须将{name}的完整用餐时间安排在{start_time}到{end_time}的时间窗内。",
     },
     "accommodation_time_window": {
         "category": "hotel",
-        "en": "Stay at {name} between {start_time} and {end_time}.",
-        "zh": "必须在{start_time}到{end_time}之间安排{name}。",
+        "en": "Schedule the entire stay at {name} within the time window from {start_time} to {end_time}.",
+        "zh": "必须将{name}的完整住宿时间安排在{start_time}到{end_time}的时间窗内。",
     },
     "attraction_exact_time": {
         "category": "attraction",
@@ -204,8 +204,8 @@ TEMPLATE_CATALOG = {
     },
     "attraction_duration_minimum": {
         "category": "attraction",
-        "en": "Spend at least {minutes} minutes visiting attractions.",
-        "zh": "景点游览总时长至少为{minutes}分钟。",
+        "en": "Spend at least {minutes} minutes in total visiting attractions.",
+        "zh": "所有景点的游览总时长至少为{minutes}分钟。",
     },
     "outbound_departure_deadline": {
         "category": "transport",
@@ -234,33 +234,33 @@ TEMPLATE_CATALOG = {
     },
     "total_budget": {
         "category": "budget",
-        "en": "Keep the total activity and in-city transportation cost within {limit}.",
-        "zh": "活动和市内交通总费用不超过{limit}。",
+        "en": "Keep the combined cost of all itinerary activities and in-city transportation within {limit} CNY.",
+        "zh": "所有行程活动和市内交通的合计费用不超过{limit}元。",
     },
     "restaurant_budget": {
         "category": "budget",
-        "en": "Keep the dining cost within {limit}.",
-        "zh": "餐饮费用不超过{limit}。",
+        "en": "Keep the total dining cost within {limit} CNY.",
+        "zh": "餐饮总费用不超过{limit}元。",
     },
     "accommodation_budget": {
         "category": "budget",
-        "en": "Keep the accommodation cost within {limit}.",
-        "zh": "住宿费用不超过{limit}。",
+        "en": "Keep the total accommodation cost within {limit} CNY.",
+        "zh": "住宿总费用不超过{limit}元。",
     },
     "attraction_budget": {
         "category": "budget",
-        "en": "Keep the attraction ticket cost within {limit}.",
-        "zh": "景点门票费用不超过{limit}。",
+        "en": "Keep the total attraction ticket cost within {limit} CNY.",
+        "zh": "景点门票总费用不超过{limit}元。",
     },
     "innercity_budget": {
         "category": "budget",
-        "en": "Keep transportation within the destination city within {limit}.",
-        "zh": "目的地城市内交通费用不超过{limit}。",
+        "en": "Keep the total cost of in-city transportation throughout the itinerary within {limit} CNY.",
+        "zh": "整个行程中的市内交通总费用不超过{limit}元。",
     },
     "daily_budget": {
         "category": "budget",
-        "en": "Keep all activity and transportation costs on day {day} within {limit}.",
-        "zh": "第{day}天的活动与交通总费用不得超过{limit}。",
+        "en": "Keep all activity and transportation costs on day {day} within {limit} CNY.",
+        "zh": "第{day}天的活动与交通总费用不得超过{limit}元。",
     },
     "forbidden_attraction_names": {
         "category": "attraction",
@@ -294,8 +294,8 @@ TEMPLATE_CATALOG = {
     },
     "forbidden_inner_transport_modes": {
         "category": "transport",
-        "en": "Do not use {transport_modes} for transportation within the destination city.",
-        "zh": "目的地城市内不要使用{transport_modes}。",
+        "en": "Do not use {transport_modes} as the primary mode of any in-city journey throughout the itinerary.",
+        "zh": "整个行程中的任何市内出行都不要使用{transport_modes}作为主交通方式。",
     },
     "forbidden_depart_transport": {
         "category": "transport",
@@ -309,7 +309,7 @@ TEMPLATE_CATALOG = {
     },
     "either_requirement": {
         "category": "logic",
-        "en": "Either {first_requirement} Or {second_requirement}",
-        "zh": "满足以下二选一要求：{first_requirement} 或 {second_requirement}",
+        "en": "Satisfy at least one of these two requirements (both are allowed): (A) {first_requirement} (B) {second_requirement}",
+        "zh": "以下两个要求至少满足一个（允许同时满足）：（A）{first_requirement}（B）{second_requirement}",
     },
 }

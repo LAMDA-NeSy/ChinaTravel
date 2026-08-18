@@ -23,6 +23,7 @@ from synthetic_query_generation.models import (
     ConstraintGenerationOptions,
     EntityContext,
 )
+from synthetic_query_generation.release_wording import clarify_constraint_text
 from synthetic_query_generation.templates import TEMPLATE_CATALOG
 from synthetic_query_generation.validation import validate_constraints
 
@@ -338,6 +339,80 @@ def test_priority_sampling_reserves_requested_slots():
     assert sum(candidate.key in priority_keys for candidate in selected) >= 3
 
 
+def test_sampling_does_not_select_or_with_its_atomic_branch():
+    first = ConstraintCandidate(
+        key="first",
+        code="result=(first_condition(plan))",
+        nl={"en": "First."},
+        category="test",
+        hardness=10,
+    )
+    second = ConstraintCandidate(
+        key="second",
+        code="result=(second_condition(plan))",
+        nl={"en": "Second."},
+        category="test",
+        hardness=10,
+    )
+    either = ConstraintCandidate(
+        key="either_requirement",
+        code="{}\n{}".format(first.code, second.code),
+        nl={"en": "Either."},
+        category="logic",
+        tags={"or_group"},
+        hardness=20,
+        metadata={"alternative_codes": [first.code, second.code]},
+    )
+    selected = choose_constraints(
+        [either, first, second],
+        random.Random(1),
+        count=3,
+        min_tricky=0,
+        min_logic=1,
+    )
+    assert either in selected
+    assert first not in selected
+    assert second not in selected
+
+
+def test_phase2_release_wording_is_explicit_and_idempotent():
+    cases = [
+        (
+            "inner_transport_mode_count",
+            "The itinerary must contain exactly 6 taxi journeys.",
+            {},
+            "Use taxi as the primary mode for exactly 6 in-city journeys.",
+        ),
+        (
+            "attraction_time_window",
+            "Visit Museum A between 09:15 and 11:15.",
+            {},
+            "Schedule the entire visit to Museum A within the time window from 09:15 to 11:15.",
+        ),
+        (
+            "daily_budget",
+            "Keep all activity and transportation costs on day 2 within 512.",
+            {},
+            "Keep all activity and transportation costs on day 2 within 512 CNY.",
+        ),
+        (
+            "either_requirement",
+            "Either Keep the dining cost within 100. Or Visit Museum A between 09:15 and 11:15.",
+            {"alternatives": ["restaurant_budget", "attraction_time_window"]},
+            (
+                "Satisfy at least one of these two requirements (both are allowed): "
+                "(A) Keep the total dining cost within 100 CNY. "
+                "(B) Schedule the entire visit to Museum A within the time window "
+                "from 09:15 to 11:15."
+            ),
+        ),
+    ]
+    for key, original, metadata, expected in cases:
+        clarified = clarify_constraint_text(key, original, metadata)
+        assert clarified == expected
+        assert clarify_constraint_text(key, clarified, metadata) == expected
+
+
 class SyntheticQueryConstraintTests(unittest.TestCase):
     def test_catalog_and_seed_validation(self):
         test_new_constraint_catalog_and_seed_plan_validation()
@@ -347,6 +422,12 @@ class SyntheticQueryConstraintTests(unittest.TestCase):
 
     def test_priority_sampling(self):
         test_priority_sampling_reserves_requested_slots()
+
+    def test_or_branch_sampling_conflict(self):
+        test_sampling_does_not_select_or_with_its_atomic_branch()
+
+    def test_release_wording(self):
+        test_phase2_release_wording_is_explicit_and_idempotent()
 
 
 if __name__ == "__main__":

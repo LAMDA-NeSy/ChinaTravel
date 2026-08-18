@@ -52,6 +52,7 @@ disabled without touching the CLI or output pipeline:
 - `validation.py`: hard-constraint and commonsense validation wrappers
 - `audit.py`: independent dataset, DSL, seed-plan, and coverage checks
 - `export_release.py`: query-only release export
+- `release_wording.py`: idempotent post-competition wording clarifications
 - `utils.py`: JSON, language, formatting, plan traversal, and cost helpers
 
 The main Python APIs are:
@@ -306,3 +307,22 @@ python -m synthetic_query_generation.export_release \
 
 Seed plans, generator metadata, and source-plan paths remain outside the release
 folder.
+
+For the complete post-competition Phase 2 Hugging Face release, use the stricter
+JSONL exporter:
+
+```bash
+PYTHONPATH=. python scripts/export_phase2_hf.py \
+  --dataset-dir artifacts/phase2_complete \
+  --output-jsonl artifacts/phase2_hf/phase2.jsonl \
+  --report artifacts/phase2_hf/phase2_audit_report.json \
+  --expected-records 2000 \
+  --records-per-shard 1000
+```
+
+This export makes inclusive OR, monetary units, transport scope, primary-mode
+journey counts, and full-activity time windows explicit. It also removes an OR
+only when one of its exact atomic branches is independently required by the
+same query. That identity-preserving cleanup does not change the query's
+feasible plan set. Future sampling prevents those OR/atomic combinations at
+selection time.

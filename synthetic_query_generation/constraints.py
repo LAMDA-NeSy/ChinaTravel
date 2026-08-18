@@ -273,8 +273,8 @@ def make_transport_constraints(context):
                     f"result=(inner_city_transportation_set<={pyset(sorted(inner_modes))})"
                 ),
                 nl={
-                    "en": f"Use only {transport_list(sorted(inner_modes), 'en')} for transportation within the destination city.",
-                    "zh": f"目的地城市内只能使用{transport_list(sorted(inner_modes), 'zh')}出行。",
+                    "en": f"Use only {transport_list(sorted(inner_modes), 'en')} as the primary modes of in-city journeys throughout the itinerary.",
+                    "zh": f"整个行程中的市内出行只能使用{transport_list(sorted(inner_modes), 'zh')}作为主交通方式。",
                 },
                 category="transport",
                 tags={"transport_modes"},
@@ -367,8 +367,8 @@ def make_transport_metric_constraints(context):
                     f"result=(transport_journey_count=={count})"
                 ),
                 nl={
-                    "en": f"The itinerary must contain exactly {plural_en(count, mode_en + ' journey')}.",
-                    "zh": f"行程中必须恰好包含{count}次{mode_zh}行程。",
+                    "en": f"Use {mode_en} as the primary mode for exactly {plural_en(count, 'in-city journey')}.",
+                    "zh": f"整个行程中必须恰好有{count}次市内出行以{mode_zh}为主交通方式。",
                 },
                 category="transport",
                 tags={"count", "transport_modes"},
@@ -416,8 +416,8 @@ def make_transport_metric_constraints(context):
                     f"result=(innercity_travel_minutes<={time_limit})"
                 ),
                 nl={
-                    "en": f"Keep the total time spent on in-city transportation within {plural_en(time_limit, 'minute')}.",
-                    "zh": f"市内交通总耗时不得超过{time_limit}分钟。",
+                    "en": f"Keep the total duration of all in-city transport segments within {plural_en(time_limit, 'minute')}.",
+                    "zh": f"整个行程中所有市内交通路段的总耗时不得超过{time_limit}分钟。",
                 },
                 category="transport",
                 tags={"duration", "tight_budget"},
@@ -718,20 +718,23 @@ def make_day_and_time_constraints(context):
                 condition = "activity_type(activity)=='attraction'"
                 var_name = "day_attraction_name_set"
                 en_day_text = f"Visit {position} on day {day_idx}."
-                en_time_prefix = "Visit"
+                en_time_text = "Schedule the entire visit to"
                 zh_kind = "景点"
+                zh_time_action = "游览"
             elif kind == "restaurant":
                 condition = "activity_type(activity) in ['breakfast', 'lunch', 'dinner']"
                 var_name = "day_restaurant_name_set"
                 en_day_text = f"Dine at {position} on day {day_idx}."
-                en_time_prefix = "Dine at"
+                en_time_text = "Schedule the entire meal at"
                 zh_kind = "餐厅"
+                zh_time_action = "用餐"
             else:
                 condition = "activity_type(activity)=='accommodation'"
                 var_name = "day_accommodation_name_set"
                 en_day_text = f"Stay at {position} on day {day_idx}."
-                en_time_prefix = "Stay at"
+                en_time_text = "Schedule the entire stay at"
                 zh_kind = "酒店"
+                zh_time_action = "住宿"
             constraints.append(
                 ConstraintCandidate(
                     key=f"{kind}_on_day",
@@ -766,8 +769,11 @@ def make_day_and_time_constraints(context):
                             f"    if activity_start_time(activity)>={pystr(window_start)} and activity_end_time(activity)<={pystr(window_end)}: result=True"
                         ),
                         nl={
-                            "en": f"{en_time_prefix} {position} between {window_start} and {window_end}.",
-                            "zh": f"必须在{window_start}到{window_end}之间安排{position}。",
+                            "en": f"{en_time_text} {position} within the time window from {window_start} to {window_end}.",
+                            "zh": (
+                                f"必须将{position}的完整{zh_time_action}时间"
+                                f"安排在{window_start}到{window_end}的时间窗内。"
+                            ),
                         },
                         category=kind,
                         tags={"time_window", "exact_name"},
@@ -828,8 +834,8 @@ def make_schedule_constraints(context):
                     f"result=(attraction_minutes>={minimum})"
                 ),
                 nl={
-                    "en": f"Spend at least {plural_en(minimum, 'minute')} visiting attractions.",
-                    "zh": f"景点游览总时长至少为{minimum}分钟。",
+                    "en": f"Spend at least {plural_en(minimum, 'minute')} in total visiting attractions.",
+                    "zh": f"所有景点的游览总时长至少为{minimum}分钟。",
                 },
                 category="attraction",
                 tags={"duration"},
@@ -1244,8 +1250,8 @@ def make_negative_constraints(context):
                     f"result=not({pyset(selected_modes)}&inner_city_transportation_set)"
                 ),
                 nl={
-                    "en": f"Do not use {transport_list(selected_modes, 'en')} for transportation within the destination city.",
-                    "zh": f"目的地城市内不要使用{transport_list(selected_modes, 'zh')}。",
+                    "en": f"Do not use {transport_list(selected_modes, 'en')} as the primary mode of any in-city journey throughout the itinerary.",
+                    "zh": f"整个行程中的任何市内出行都不要使用{transport_list(selected_modes, 'zh')}作为主交通方式。",
                 },
                 category="transport",
                 tags={"not_constraint", "transport_modes"},
@@ -1317,40 +1323,40 @@ def make_budget_constraints(context):
             "total_budget",
             total_activity_and_innercity_cost(plan),
             "total_cost=0\nfor activity in allactivities(plan):\n  total_cost+=activity_cost(activity)\n  total_cost += innercity_transport_cost(activity_transports(activity))\nresult=(total_cost<={limit})",
-            "Keep the total activity and in-city transportation cost within {limit}.",
-            "活动和市内交通总费用不超过{limit}。",
+            "Keep the combined cost of all itinerary activities and in-city transportation within {limit} CNY.",
+            "所有行程活动和市内交通的合计费用不超过{limit}元。",
             "budget",
         ),
         (
             "restaurant_budget",
             cost_by_activity_type(plan, MEAL_TYPES),
             "restaurant_cost=0\nfor activity in allactivities(plan):\n  if activity_type(activity) in ['breakfast', 'lunch', 'dinner']: restaurant_cost+=activity_cost(activity)\nresult=(restaurant_cost<={limit})",
-            "Keep the dining cost within {limit}.",
-            "餐饮费用不超过{limit}。",
+            "Keep the total dining cost within {limit} CNY.",
+            "餐饮总费用不超过{limit}元。",
             "food",
         ),
         (
             "accommodation_budget",
             cost_by_activity_type(plan, {"accommodation"}),
             "accommodation_cost=0\nfor activity in allactivities(plan):\n  if activity_type(activity)=='accommodation': accommodation_cost+=activity_cost(activity)\nresult=(accommodation_cost<={limit})",
-            "Keep the accommodation cost within {limit}.",
-            "住宿费用不超过{limit}。",
+            "Keep the total accommodation cost within {limit} CNY.",
+            "住宿总费用不超过{limit}元。",
             "hotel",
         ),
         (
             "attraction_budget",
             cost_by_activity_type(plan, {"attraction"}),
             "attraction_cost=0\nfor activity in allactivities(plan):\n  if activity_type(activity)=='attraction': attraction_cost+=activity_cost(activity)\nresult=(attraction_cost<={limit})",
-            "Keep the attraction ticket cost within {limit}.",
-            "景点门票费用不超过{limit}。",
+            "Keep the total attraction ticket cost within {limit} CNY.",
+            "景点门票总费用不超过{limit}元。",
             "attraction",
         ),
         (
             "innercity_budget",
             innercity_cost(plan),
             "inner_city_transportation_cost=0\nfor activity in allactivities(plan):\n  inner_city_transportation_cost+=innercity_transport_cost(activity_transports(activity))\nresult=(inner_city_transportation_cost<={limit})",
-            "Keep transportation within the destination city within {limit}.",
-            "目的地城市内交通费用不超过{limit}。",
+            "Keep the total cost of in-city transportation throughout the itinerary within {limit} CNY.",
+            "整个行程中的市内交通总费用不超过{limit}元。",
             "transport",
         ),
     ]
@@ -1397,8 +1403,8 @@ def make_budget_constraints(context):
                     f"result=(daily_cost<={limit})"
                 ),
                 nl={
-                    "en": f"Keep all activity and transportation costs on day {day_idx} within {limit}.",
-                    "zh": f"第{day_idx}天的活动与交通总费用不得超过{limit}。",
+                    "en": f"Keep all activity and transportation costs on day {day_idx} within {limit} CNY.",
+                    "zh": f"第{day_idx}天的活动与交通总费用不得超过{limit}元。",
                 },
                 category="budget",
                 tags={"day_specific", "tight_budget"},
@@ -1462,12 +1468,28 @@ def choose_constraints(
         return []
     selected = []
     priority_keys = priority_keys or set()
+
+    def conflicts_with_selected(candidate):
+        candidate_alternatives = set(candidate.metadata.get("alternative_codes", []))
+        for existing in selected:
+            existing_alternatives = set(
+                existing.metadata.get("alternative_codes", [])
+            )
+            if existing.code in candidate_alternatives:
+                return True
+            if candidate.code in existing_alternatives:
+                return True
+            if candidate_alternatives & existing_alternatives:
+                return True
+        return False
+
     priority_candidates = [
         candidate for candidate in candidates if candidate.key in priority_keys
     ]
     rng.shuffle(priority_candidates)
     for candidate in priority_candidates[: min(min_priority, count)]:
-        selected.append(candidate)
+        if not conflicts_with_selected(candidate):
+            selected.append(candidate)
 
     logic_candidates = [c for c in candidates if c.tags & {"not_constraint", "or_group"}]
     rng.shuffle(logic_candidates)
@@ -1480,7 +1502,7 @@ def choose_constraints(
         )
         if current_logic >= min_logic:
             break
-        if candidate not in selected:
+        if candidate not in selected and not conflicts_with_selected(candidate):
             selected.append(candidate)
 
     tricky = [c for c in candidates if c.tags & TRICKY_TAGS]
@@ -1488,11 +1510,18 @@ def choose_constraints(
     for candidate in tricky:
         if len(selected) >= min(min_tricky, count):
             break
-        if candidate not in selected:
+        if candidate not in selected and not conflicts_with_selected(candidate):
             selected.append(candidate)
 
     remaining = [c for c in candidates if c not in selected]
-    while remaining and len(selected) < count:
+    while len(selected) < count:
+        remaining = [
+            candidate
+            for candidate in remaining
+            if not conflicts_with_selected(candidate)
+        ]
+        if not remaining:
+            break
         weights = [max(1, c.hardness) for c in remaining]
         chosen = rng.choices(remaining, weights=weights, k=1)[0]
         selected.append(chosen)
@@ -1541,8 +1570,15 @@ def make_or_constraints(candidates, rng, max_groups):
                 key="either_requirement",
                 code=code,
                 nl={
-                    "en": f"Either {first.text('en')} Or {second.text('en')}",
-                    "zh": f"满足以下二选一要求：{first.text('zh')} 或 {second.text('zh')}",
+                    "en": (
+                        "Satisfy at least one of these two requirements "
+                        f"(both are allowed): (A) {first.text('en')} "
+                        f"(B) {second.text('en')}"
+                    ),
+                    "zh": (
+                        "以下两个要求至少满足一个（允许同时满足）："
+                        f"（A）{first.text('zh')}（B）{second.text('zh')}"
+                    ),
                 },
                 category="logic",
                 tags={"or_group"} | first.tags | second.tags,
@@ -1550,6 +1586,7 @@ def make_or_constraints(candidates, rng, max_groups):
                 metadata={
                     "alternatives": [first.key, second.key],
                     "alternative_categories": [first.category, second.category],
+                    "alternative_codes": [first.code, second.code],
                 },
             )
         )
