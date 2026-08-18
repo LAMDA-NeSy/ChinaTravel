@@ -20,6 +20,9 @@ cp translation_api_config.example.json translation_api_config.json
 export TRANSLATION_API_KEY="your-key"
 ```
 
+`--no-api` runs the dictionary and record-processing stages without loading an
+API configuration file or requiring an API key.
+
 The local configuration is ignored by Git. It can independently override API
 parameters for translation, audit, repair, and thinking-enabled re-audit.
 

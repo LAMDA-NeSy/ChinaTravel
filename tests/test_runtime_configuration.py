@@ -67,6 +67,57 @@ class RuntimeConfigurationTests(unittest.TestCase):
 
             self.assertEqual(loaded_path, config_path.resolve())
 
+    def test_no_api_does_not_load_api_config(self):
+        dictionary = build_translation_assets.TranslationDictionary()
+        source_record = {
+            "uid": "offline-query",
+            "nature_language": "离线翻译测试",
+            "hard_logic_py": [],
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            output_dir = Path(temp_name) / "output"
+            with (
+                patch.object(
+                    build_translation_assets,
+                    "load_translation_api_config",
+                    side_effect=AssertionError("API config must not be loaded"),
+                ),
+                patch.object(
+                    build_translation_assets,
+                    "build_dictionary",
+                    return_value=dictionary,
+                ),
+                patch.object(
+                    build_translation_assets,
+                    "local_records",
+                    return_value=[(Path("offline-query.json"), source_record)],
+                ),
+            ):
+                build_translation_assets.main(
+                    [
+                        "--no-api",
+                        "--api-config",
+                        str(Path(temp_name) / "missing.json"),
+                        "--output-dir",
+                        str(output_dir),
+                    ]
+                )
+
+            summary = json.loads(
+                (output_dir / "summary.json").read_text(encoding="utf-8")
+            )
+            failures = json.loads(
+                (output_dir / "query_translation_failures.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertIsNone(summary["api_config"])
+            self.assertEqual(summary["translation_api"], {"enabled": False})
+            self.assertEqual(
+                failures,
+                [{"reason": "API disabled", "uid": "offline-query"}],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

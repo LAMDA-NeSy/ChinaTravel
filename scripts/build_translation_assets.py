@@ -512,14 +512,21 @@ def translate_query_openai_compatible(
 
 
 def translate_queries(records, args, term_map, api_config):
+    if args.no_api:
+        return {}, [
+            {"uid": data.get("uid"), "reason": "API disabled"}
+            for _, data in records
+            if data.get("nature_language")
+        ]
+
     api_key_env = api_config.get("api_key_env", "DEEPSEEK_API_KEY")
     api_key = os.environ.get(api_key_env)
     api_key_required = bool(api_config.get("api_key_required", True))
-    if args.no_api or (api_key_required and not api_key):
+    if api_key_required and not api_key:
         return {}, [
             {
                 "uid": data.get("uid"),
-                "reason": "{} not set".format(api_key_env) if not api_key else "API disabled",
+                "reason": "{} not set".format(api_key_env),
             }
             for _, data in records
             if data.get("nature_language")
@@ -623,7 +630,7 @@ def build_translated_records(records, term_map, query_translations):
     return translated_records, unresolved, untranslated_query_uids
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Build Chinese-to-English DSL translation assets.")
     parser.add_argument("--source", choices=["local", "hf"], default="local", help="Source for Chinese query JSON records.")
     parser.add_argument("--input-data-dir", default="TPC_IJCAI_2026_phase1", help="Chinese query JSON root.")
@@ -652,12 +659,16 @@ def main():
         action="store_true",
         help="Ignore existing non-empty translated_nature_language.json entries.",
     )
-    args = parser.parse_args()
-    api_config_path, api_config = load_translation_api_config(args.api_config)
-    args.model = args.model or api_config["model"]
-    args.workers = args.workers or int(api_config.get("workers", 32))
-    api_config["model"] = args.model
-    api_config["workers"] = args.workers
+    args = parser.parse_args(argv)
+    if args.no_api:
+        api_config_path = None
+        api_config = {}
+    else:
+        api_config_path, api_config = load_translation_api_config(args.api_config)
+        args.model = args.model or api_config["model"]
+        args.workers = args.workers or int(api_config.get("workers", 32))
+        api_config["model"] = args.model
+        api_config["workers"] = args.workers
 
     output_dir = PROJECT_ROOT / args.output_dir
     dictionary = build_dictionary()
@@ -696,6 +707,18 @@ def main():
     write_json(output_dir / "query_translation_failures.json", query_failures)
     write_json(output_dir / "untranslated_query_uids.json", untranslated_query_uids)
     write_json(output_dir / "unresolved_hard_logic_literals.json", unresolved)
+    translation_api_summary = {"enabled": False}
+    if not args.no_api:
+        translation_api_summary = {
+            "enabled": True,
+            "model": args.model,
+            "workers": args.workers,
+            "endpoint": resolve_chat_completions_url(api_config),
+            "temperature": api_config.get("temperature"),
+            "max_tokens": api_config.get("max_tokens"),
+            "max_tokens_field": api_config.get("max_tokens_field", "max_tokens"),
+            "extra_body": api_config.get("extra_body", {}),
+        }
     write_json(
         output_dir / "summary.json",
         {
@@ -711,21 +734,18 @@ def main():
             "query_translation_failures": len(query_failures),
             "untranslated_queries": len(untranslated_query_uids),
             "unresolved_hard_logic_entries": len(unresolved),
-            "api_config": display_path(api_config_path),
-            "translation_api": {
-                "model": args.model,
-                "workers": args.workers,
-                "endpoint": resolve_chat_completions_url(api_config),
-                "temperature": api_config.get("temperature"),
-                "max_tokens": api_config.get("max_tokens"),
-                "max_tokens_field": api_config.get("max_tokens_field", "max_tokens"),
-                "extra_body": api_config.get("extra_body", {}),
-            },
+            "api_config": (
+                display_path(api_config_path) if api_config_path is not None else None
+            ),
+            "translation_api": translation_api_summary,
         },
     )
 
     print("Wrote translation assets to {}".format(display_path(output_dir)))
-    print("API config: {}".format(display_path(api_config_path)))
+    if api_config_path is None:
+        print("API config: disabled (--no-api)")
+    else:
+        print("API config: {}".format(display_path(api_config_path)))
     print("Dictionary terms: {}".format(len(dictionary.term_map)))
     print("Source records: {}".format(len(records)))
     print("Reused existing translations: {}".format(len(existing_translations)))

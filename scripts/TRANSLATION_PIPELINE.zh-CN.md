@@ -12,6 +12,8 @@ cp translation_api_config.example.json translation_api_config.json
 export TRANSLATION_API_KEY="your-key"
 ```
 
+使用 `--no-api` 时，字典和记录处理阶段不会加载 API 配置文件，也不需要 API key。
+
 `translation_api_config.json` 已被 Git 忽略。配置支持：
 
 - 自定义 OpenAI-compatible `base_url` 和 Chat Completions 路径；
