@@ -15,8 +15,34 @@ constraints, commonsense validation, and preference-based scoring.
 [![Queries](https://img.shields.io/badge/Queries-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)
 [![Sandbox](https://img.shields.io/badge/Sandbox-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/Competition-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
+[![TPC@IJCAI2025](https://img.shields.io/badge/Competition-TPC%40IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
+[![TPC@AIC2025](https://img.shields.io/badge/Competition-TPC%40AIC2025-green)](TPC@AIC2025/readme.md)
 
-## Release 2026.08
+## News
+
+### TPC@IJCAI 2026
+
+ChinaTravel was selected as the official benchmark for the Travel Planning
+Challenge at IJCAI 2026. The challenge focused on agentic systems for practical,
+constraint-rich travel planning. See the
+[official competition website](https://chinatravel-competition.github.io/IJCAI2026/).
+
+### TPC@IJCAI 2025
+
+ChinaTravel was selected as the official benchmark for the Travel Planning
+Challenge at IJCAI 2025. The challenge invited language agents to solve
+real-world travel-planning tasks under complex constraints. See the
+[official competition website](https://chinatravel-competition.github.io/IJCAI2025/).
+
+### TPC@AIC 2025
+
+ChinaTravel also supported the Travel Planning Challenge at AIC 2025. The
+competition setup, metrics, submission format, and evaluation environment are
+retained in the [competition archive](TPC@AIC2025/readme.md).
+
+## Changelog
+
+### 2026.08
 
 The 2026.08 release is the maintained post-competition version of ChinaTravel.
 It consolidates the benchmark, evaluator, bilingual environment, and data
@@ -41,6 +67,36 @@ tooling developed during and after TPC@IJCAI 2026:
 Competition-only generated datasets and private test splits are distributed
 separately. API credentials and local model outputs are not included in the
 repository.
+
+### 2025.09
+
+- Published the champion solution of the TPC@IJCAI 2025 DSL track. We thank
+  [@evergreenee](https://github.com/evergreenee) for the contribution.
+
+### 2025.06
+
+- Fixed commonsense-evaluation error collection.
+- Fixed the pure-neural agent pipeline.
+- Fixed Hugging Face dataset loading.
+- Improved exception handling in syntax verification.
+
+### 2025.05
+
+- Updated logs for the latest version.
+- Published the TPC evaluation code.
+
+### 2025.04
+
+- Added local query loading: a non-default `--splits NAME` value resolves to
+  `chinatravel/evaluation/default_splits/NAME.txt`, whose lines identify the
+  query files to load.
+- Published a detailed constraint classification in the
+  [evaluation documentation](chinatravel/symbol_verification/readme.md).
+- Introduced the LLM-modulo baseline with a ground-truth symbolic verifier,
+  based on *Robust Planning with Compound LLM Architectures: An LLM-Modulo
+  Approach* and its
+  [reference implementation](https://github.com/Atharva-Gundawar/LLM-Modulo-prompts).
+- Added local inference support for Qwen3-8B and Qwen3-4B.
 
 ## Data Releases
 

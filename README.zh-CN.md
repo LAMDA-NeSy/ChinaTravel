@@ -14,8 +14,31 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
 [![Query 数据](https://img.shields.io/badge/Query-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)
 [![沙盒数据](https://img.shields.io/badge/沙盒-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/竞赛-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
+[![TPC@IJCAI2025](https://img.shields.io/badge/竞赛-TPC%40IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
+[![TPC@AIC2025](https://img.shields.io/badge/竞赛-TPC%40AIC2025-green)](TPC@AIC2025/readme.md)
 
-## 2026.08 正式版本
+## 新闻
+
+### TPC@IJCAI 2026
+
+ChinaTravel 入选 IJCAI 2026 Travel Planning Challenge 官方基准。该赛事面向具有实际
+约束的旅行规划任务，重点评估智能体系统的综合规划能力。详见
+[赛事官网](https://chinatravel-competition.github.io/IJCAI2026/)。
+
+### TPC@IJCAI 2025
+
+ChinaTravel 入选 IJCAI 2025 Travel Planning Challenge 官方基准。该赛事邀请参赛者
+开发能够处理复杂约束与真实旅行规划场景的语言智能体。详见
+[赛事官网](https://chinatravel-competition.github.io/IJCAI2025/)。
+
+### TPC@AIC 2025
+
+ChinaTravel 同时支持了 AIC 2025 Travel Planning Challenge。赛事设置、测评指标、
+提交格式和测评环境保留在[赛事归档](TPC@AIC2025/readme.md)中。
+
+## 更新日志
+
+### 2026.08
 
 2026.08 版本是 ChinaTravel 在比赛结束后的正式维护版本，统一整合了
 TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数据工具：
@@ -33,6 +56,33 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
 - 使用仓库相对且已被 Git 忽略的 `artifacts/` 目录，便于在不同环境中运行本地流程。
 
 比赛专用的生成数据和私有测试 split 另行分发。仓库不包含 API 密钥或本地模型输出。
+
+### 2025.09
+
+- 发布 TPC@IJCAI 2025 DSL 赛道冠军方案。感谢
+  [@evergreenee](https://github.com/evergreenee) 的贡献。
+
+### 2025.06
+
+- 修复常识约束测评中的错误收集逻辑。
+- 修复纯神经 Agent 流程。
+- 修复 Hugging Face 数据集加载。
+- 完善语法验证的异常处理。
+
+### 2025.05
+
+- 更新适配最新版本的日志。
+- 发布 TPC 测评代码。
+
+### 2025.04
+
+- 增加本地 Query 加载能力：非默认的 `--splits NAME` 会读取
+  `chinatravel/evaluation/default_splits/NAME.txt`，其中逐行列出待加载的 Query 文件。
+- 在[测评文档](chinatravel/symbol_verification/readme.md)中发布详细约束分类。
+- 引入带真实符号验证器的 LLM-modulo baseline，参考 *Robust Planning with Compound
+  LLM Architectures: An LLM-Modulo Approach* 及其
+  [开源实现](https://github.com/Atharva-Gundawar/LLM-Modulo-prompts)。
+- 增加 Qwen3-8B 和 Qwen3-4B 本地推理支持。
 
 ## 数据发布
 
