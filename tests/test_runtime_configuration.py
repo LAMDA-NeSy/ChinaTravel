@@ -12,7 +12,11 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import build_translation_assets
-from chinatravel.agent.load_model import build_method_name
+from chinatravel.agent.load_model import (
+    build_method_name,
+    ensure_method_language,
+    method_has_language,
+)
 
 
 def write_api_config(path):
@@ -34,6 +38,26 @@ def write_api_config(path):
 class RuntimeConfigurationTests(unittest.TestCase):
     def test_rule_nesy_method_name_contains_llm_once(self):
         self.assertEqual(build_method_name("RuleNeSy", "rule"), "RuleNeSy_rule")
+
+    def test_decorated_method_name_detects_embedded_language_suffix(self):
+        method = build_method_name(
+            "LLM-modulo",
+            "gpt-4.1",
+            lang="en",
+            refine_steps=10,
+            oracle_translation=True,
+        )
+
+        self.assertTrue(method_has_language(method, "en"))
+        self.assertEqual(ensure_method_language(method, "en"), method)
+
+    def test_language_suffix_is_inserted_before_method_modifiers(self):
+        method = "LLM-modulo_gpt-4.1_10steps_oracletranslation"
+
+        self.assertEqual(
+            ensure_method_language(method, "en"),
+            "LLM-modulo_gpt-4.1_en_10steps_oracletranslation",
+        )
 
     def test_translation_api_config_expands_user_directory(self):
         with tempfile.TemporaryDirectory() as temp_name:

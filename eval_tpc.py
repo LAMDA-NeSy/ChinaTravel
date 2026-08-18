@@ -43,11 +43,6 @@ DEFAULT_PR=[
     DEFAULT_RES_PR
 ]
 
-def _method_has_en_suffix(method):
-    base_method = method.split("_oracletranslation")[0].split("_oracle_translation")[0]
-    return base_method.endswith("_en")
-
-
 def cal_default_pr_score(query_index, query_data, result_data,all_pass_id):
     import numpy as np
     from copy import deepcopy
@@ -132,8 +127,9 @@ if __name__ == "__main__":
     parser.add_argument("--preference", "-p", action="store_true", default=False)
     parser.add_argument("--lang", "--locale", choices=["zh", "en"], default="zh")
     args = parser.parse_args()
-    if args.lang == "en" and not _method_has_en_suffix(args.method):
-        args.method += "_en"
+    from chinatravel.agent.load_model import ensure_method_language
+
+    args.method = ensure_method_language(args.method, args.lang)
 
     # print(args.splits)
 

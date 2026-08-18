@@ -6,11 +6,6 @@ import os
 project_root_path = os.path.dirname(os.path.abspath(__file__))
 
 
-def _method_has_en_suffix(method):
-    base_method = method.split("_oracletranslation")[0].split("_oracle_translation")[0]
-    return base_method.endswith("_en")
-
-
 def default_method_list(llm_name=None, *, lang="zh"):
     from chinatravel.agent.load_model import build_method_name, resolve_llm_name
 
@@ -35,12 +30,6 @@ def default_method_list(llm_name=None, *, lang="zh"):
         ),
         build_method_name("TPCAgent", resolved_llm_name, lang=lang),
     ]
-
-
-def _method_has_en_suffix(method):
-    base_method = method.split("_oracletranslation")[0].split("_oracle_translation")[0]
-    return base_method.endswith("_en")
-
 
 def load_result(args, query_index, verbose=False):
     def load_result_for_method(method):
@@ -103,8 +92,10 @@ if __name__ == "__main__":
             parser.error(
                 "--method all requires --llm <model> or CHINATRAVEL_OPENAI_MODEL/OPENAI_MODEL."
             )
-    if args.lang == "en" and args.method != "all" and not _method_has_en_suffix(args.method):
-        args.method += "_en"
+    if args.method != "all":
+        from chinatravel.agent.load_model import ensure_method_language
+
+        args.method = ensure_method_language(args.method, args.lang)
 
     # print(args.splits)
 

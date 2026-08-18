@@ -366,7 +366,9 @@ class OpenAICompatibleLLM(AbstractLLM):
             response_format=response_format,
             **kwargs,
         )
-        if one_line and "stop" not in request_args:
+        if self.wire_api == RESPONSES_WIRE_API:
+            request_args.pop("stop", None)
+        elif one_line and "stop" not in request_args:
             request_args["stop"] = ["\n"]
 
         try:

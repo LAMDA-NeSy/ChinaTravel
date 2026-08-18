@@ -17,7 +17,8 @@ def _predicate(key: str, op: str, value: Any) -> Callable[[Any], bool]:
     if op == "ne":
         return lambda x: x != value
     if op == "contains":
-        return lambda x: value in str(x)
+        needle = str(value)
+        return lambda x: needle in str(x)
     if op == "lt":
         return lambda x: x < value
     if op == "le":

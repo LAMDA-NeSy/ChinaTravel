@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 
+_METHOD_MODIFIER_RE = re.compile(
+    r"_(?:\d+steps|oracle_?translation|preference_?search)$"
+)
+
+
 def normalize_run_name(value):
     text = str(value or "model")
     text = re.sub(r"[^0-9A-Za-z_.-]+", "_", text)
@@ -22,6 +27,32 @@ def resolve_agent_llm_name(agent_name, llm_name=None):
     if agent_name == "RuleNeSy" and llm_name is None:
         return "rule"
     return resolve_llm_name(llm_name)
+
+
+def method_has_language(method, lang):
+    base = str(method)
+    while True:
+        match = _METHOD_MODIFIER_RE.search(base)
+        if match is None:
+            break
+        base = base[: match.start()]
+    return base.endswith("_{}".format(lang))
+
+
+def ensure_method_language(method, lang):
+    method = str(method)
+    if lang != "en" or method_has_language(method, lang):
+        return method
+
+    base = method
+    modifiers = []
+    while True:
+        match = _METHOD_MODIFIER_RE.search(base)
+        if match is None:
+            break
+        modifiers.insert(0, match.group(0))
+        base = base[: match.start()]
+    return "{}_en{}".format(base, "".join(modifiers))
 
 
 def build_method_name(
