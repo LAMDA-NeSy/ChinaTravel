@@ -13,6 +13,7 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
 [![Query 数据](https://img.shields.io/badge/Query-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
 [![Query 数据](https://img.shields.io/badge/Query-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)
 [![沙盒数据](https://img.shields.io/badge/沙盒-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
+[![沙盒数据](https://img.shields.io/badge/沙盒-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/竞赛-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 [![TPC@IJCAI2025](https://img.shields.io/badge/竞赛-TPC%40IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
 [![TPC@AIC2025](https://img.shields.io/badge/竞赛-TPC%40AIC2025-green)](TPC@AIC2025/readme.md)
@@ -51,7 +52,7 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
   导出流程；
 - 中译英 DSL/Query 翻译，包括规则与 LLM 联合审计、选择性修复、保守重审和人工
   裁决流程；
-- 可复现的规范化英文沙盒导出、同步发布于 Hugging Face 和魔搭的 Query 数据，
+- 可复现的规范化英文沙盒导出、同步发布于 Hugging Face 和魔搭的 Query 与沙盒数据，
   以及发布校验和；
 - 使用仓库相对且已被 Git 忽略的 `artifacts/` 目录，便于在不同环境中运行本地流程。
 
@@ -89,10 +90,11 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
 | 资源 | Hugging Face | 魔搭 |
 | --- | --- | --- |
 | Query 数据集 | [LAMDA-NeSy/ChinaTravel](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel) | [Cbphcr/ChinaTravel](https://modelscope.cn/datasets/Cbphcr/ChinaTravel) |
-| 双语沙盒 | [LAMDA-NeSy/ChinaTravel-Sandbox](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox) | 暂未镜像 |
+| 双语沙盒 | [LAMDA-NeSy/ChinaTravel-Sandbox](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox) | [Cbphcr/ChinaTravel-Sandbox](https://modelscope.cn/datasets/Cbphcr/ChinaTravel-Sandbox) |
 
-魔搭 Query 仓库镜像官方 Hugging Face Query 数据。两处均提供 Phase 1 splits，以及
-完整的 2,000 条 `TPC2026_phase2` 数据和其中 100 条 `competition_test` split。
+魔搭仓库镜像官方 Hugging Face Query 与沙盒数据。两个 Query 仓库均提供 Phase 1
+splits，以及完整的 2,000 条 `TPC2026_phase2` 数据和其中 100 条
+`competition_test` split。
 
 ## 目录结构
 
@@ -126,7 +128,8 @@ pip install -r requirements.txt
 ```
 
 从 [Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
-下载官方双语沙盒数据，并放置为：
+或[魔搭](https://modelscope.cn/datasets/Cbphcr/ChinaTravel-Sandbox)下载官方双语沙盒数据，
+并放置为：
 
 ```text
 chinatravel/environment/database/       # 中文沙盒
@@ -134,7 +137,7 @@ chinatravel/environment/database_en/    # 英文沙盒
 ```
 
 > [!IMPORTANT]
-> `next` 分支必须配合 Hugging Face 上的当前沙盒版本使用。运行时不再自动修正旧版
+> `next` 分支必须配合当前官方沙盒版本使用。运行时不再自动修正旧版
 > 英文概念标签或 POI 别名；旧 `database_en` 快照不受支持，可能导致工具返回值不同或
 > 测评失败。Query、plan 和 DSL 中的实体名称必须与安装的沙盒完全一致。
 
@@ -304,8 +307,8 @@ python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_
   --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
-普通用户应直接下载 Hugging Face 上的当前版本。维护工具生成的压缩包包含 manifest、
-修改报告和校验和，详见[修复版沙盒导出说明](scripts/SANDBOX_EXPORT.md)。
+普通用户应直接下载 Hugging Face 或魔搭上的当前版本。维护工具生成的压缩包包含
+manifest、修改报告和校验和，详见[修复版沙盒导出说明](scripts/SANDBOX_EXPORT.md)。
 
 ## 测试
 

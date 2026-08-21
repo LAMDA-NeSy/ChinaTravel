@@ -14,6 +14,7 @@ constraints, commonsense validation, and preference-based scoring.
 [![Queries](https://img.shields.io/badge/Queries-HuggingFace-yellow)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel)
 [![Queries](https://img.shields.io/badge/Queries-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)
 [![Sandbox](https://img.shields.io/badge/Sandbox-HuggingFace-orange)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
+[![Sandbox](https://img.shields.io/badge/Sandbox-ModelScope-blue)](https://modelscope.cn/datasets/Cbphcr/ChinaTravel-Sandbox)
 [![TPC@IJCAI2026](https://img.shields.io/badge/Competition-TPC%40IJCAI2026-green)](https://chinatravel-competition.github.io/IJCAI2026/)
 [![TPC@IJCAI2025](https://img.shields.io/badge/Competition-TPC%40IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
 [![TPC@AIC2025](https://img.shields.io/badge/Competition-TPC%40AIC2025-green)](TPC@AIC2025/readme.md)
@@ -60,7 +61,7 @@ tooling developed during and after TPC@IJCAI 2026:
 - Chinese-to-English DSL/query translation with rule and LLM audit, selective
   repair, conservative re-audit, and human-adjudication workflows;
 - reproducible export of canonicalized English sandbox data, synchronized query
-  releases on Hugging Face and ModelScope, and release checksums;
+  and sandbox releases on Hugging Face and ModelScope, and release checksums;
 - repository-relative, Git-ignored `artifacts/` outputs for portable local
   workflows.
 
@@ -103,11 +104,12 @@ repository.
 | Resource | Hugging Face | ModelScope |
 | --- | --- | --- |
 | Query dataset | [LAMDA-NeSy/ChinaTravel](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel) | [Cbphcr/ChinaTravel](https://modelscope.cn/datasets/Cbphcr/ChinaTravel) |
-| Bilingual sandbox | [LAMDA-NeSy/ChinaTravel-Sandbox](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox) | Not currently mirrored |
+| Bilingual sandbox | [LAMDA-NeSy/ChinaTravel-Sandbox](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox) | [Cbphcr/ChinaTravel-Sandbox](https://modelscope.cn/datasets/Cbphcr/ChinaTravel-Sandbox) |
 
-The ModelScope query repository mirrors the official Hugging Face query
-release. Both provide the Phase 1 splits and the complete 2,000-query
-`TPC2026_phase2` config, including its 100-query `competition_test` split.
+The ModelScope repositories mirror the official Hugging Face query and sandbox
+releases. Both query repositories provide the Phase 1 splits and the complete
+2,000-query `TPC2026_phase2` config, including its 100-query `competition_test`
+split.
 
 ## Repository Map
 
@@ -142,7 +144,8 @@ pip install -r requirements.txt
 
 Download the official bilingual sandbox from
 [Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox)
-and place it as:
+or [ModelScope](https://modelscope.cn/datasets/Cbphcr/ChinaTravel-Sandbox), and
+place it as:
 
 ```text
 chinatravel/environment/database/       # Chinese sandbox
@@ -150,7 +153,7 @@ chinatravel/environment/database_en/    # English sandbox
 ```
 
 > [!IMPORTANT]
-> The `next` branch requires the current Hugging Face sandbox release. It does
+> The `next` branch requires the current official sandbox release. It does
 > not rewrite legacy English concept labels or POI aliases at runtime. Older
 > `database_en` snapshots are unsupported and can produce different tool output
 > or evaluation failures. Query, plan, and DSL entity names must match the
@@ -334,9 +337,10 @@ python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_
   --archive artifacts/sandbox/ChinaTravel_sandbox_en_fixed.zip
 ```
 
-Normal users should download the current Hugging Face release instead. The
-archive produced by this maintenance tool contains a manifest, change report,
-and checksums. See [Fixed Sandbox Export](scripts/SANDBOX_EXPORT.md).
+Normal users should download the current Hugging Face or ModelScope release
+instead. The archive produced by this maintenance tool contains a manifest,
+change report, and checksums. See
+[Fixed Sandbox Export](scripts/SANDBOX_EXPORT.md).
 
 ## Tests
 
