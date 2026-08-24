@@ -75,8 +75,8 @@ class EnvOutput:
         next_page_idx = self._page_idx + 1
         start = next_page_idx * 10
         if start >= len(self._original_data):
-            self._data = "No more data."
             self._page_idx = next_page_idx
+            self._data = self._original_data.iloc[0:0]
             return self
 
         self._page_idx = next_page_idx

@@ -102,6 +102,29 @@ class AgentToolProtocolTests(unittest.TestCase):
         self.assertEqual(second["data"]["row_count"], 5)
         self.assertEqual(second["data"]["rows"][0]["name"], "Museum 10")
 
+    def test_exhausted_next_page_preserves_dataframe_protocol(self):
+        env = WorldEnv.__new__(WorldEnv)
+        env.results = []
+        env.attractions = _PagedAttractions()
+        adapter = ChinaTravelEnvAdapter(lang="en")
+        adapter._env = env
+
+        adapter.call_tool(
+            "attractions_select",
+            {
+                "city": "Shanghai",
+                "key": "name",
+                "op": "contains",
+                "value": "Museum",
+            },
+        )
+        adapter.call_tool("next_page", {})
+        exhausted = adapter.call_tool("next_page", {})
+
+        self.assertTrue(exhausted["success"])
+        self.assertEqual(exhausted["data"]["row_count"], 0)
+        self.assertEqual(exhausted["data"]["rows"], [])
+
 
 class ResponsesWireFormatTests(unittest.TestCase):
     def test_one_line_does_not_send_unsupported_stop_to_responses_api(self):
