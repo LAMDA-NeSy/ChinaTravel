@@ -1,9 +1,8 @@
-# ChinaTravel
+<center>
+  <h1>[ICLR'26] ChinaTravel: An Open-Ended Travel Planning Benchmark with Compositional Constraint Validation for Language Agents</h1>
+</center>
 
 [English](README.md) | [简体中文](README.zh-CN.md)
-
-**ChinaTravel: An Open-Ended Travel Planning Benchmark with Compositional
-Constraint Validation for Language Agents** (ICLR 2026)
 
 ChinaTravel is a real-world travel-planning benchmark for language agents. It
 combines structured sandbox data, natural-language requests, executable DSL
@@ -19,7 +18,7 @@ constraints, commonsense validation, and preference-based scoring.
 [![TPC@IJCAI2025](https://img.shields.io/badge/Competition-TPC%40IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
 [![TPC@AIC2025](https://img.shields.io/badge/Competition-TPC%40AIC2025-green)](TPC@AIC2025/readme.md)
 
-## News
+## 🏆 News
 
 ### TPC@IJCAI 2026
 
@@ -41,7 +40,7 @@ ChinaTravel also supported the Travel Planning Challenge at AIC 2025. The
 competition setup, metrics, submission format, and evaluation environment are
 retained in the [competition archive](TPC@AIC2025/readme.md).
 
-## Changelog
+## 📝 Changelog
 
 ### 2026.08
 
@@ -99,7 +98,7 @@ repository.
   [reference implementation](https://github.com/Atharva-Gundawar/LLM-Modulo-prompts).
 - Added local inference support for Qwen3-8B and Qwen3-4B.
 
-## Data Releases
+## 📦 Data Releases
 
 | Resource | Hugging Face | ModelScope |
 | --- | --- | --- |
@@ -111,7 +110,7 @@ releases. Both query repositories provide the Phase 1 splits and the complete
 2,000-query `TPC2026_phase2` config, including its 100-query `competition_test`
 split.
 
-## Repository Map
+## 🗂️ Repository Map
 
 | Path | Purpose |
 | --- | --- |
@@ -123,7 +122,7 @@ split.
 | `run_exp.py`, `run_tpc.py` | Agent execution entrypoints |
 | `eval_exp.py`, `eval_tpc.py` | Standard and TPC evaluation entrypoints |
 
-## Installation
+## 🚀 Installation
 
 Python 3.12 or newer is required by `pyproject.toml`.
 
@@ -163,7 +162,7 @@ The requested language must exist locally. The standard run/evaluation scripts
 default to Chinese for backward compatibility; pass `--lang en` explicitly for
 English data.
 
-## Model Runtime
+## 🤖 Model Runtime
 
 ChinaTravel accepts built-in aliases such as `deepseek`, `gpt-4o`, and
 `glm4-plus`, or any model exposed through an OpenAI-compatible endpoint.
@@ -191,7 +190,7 @@ Additional runtime variables include:
 Responses mode requires `openai>=1.66.0`. API keys must remain in environment
 variables or ignored local configuration files.
 
-## Running Agents
+## ▶️ Running Agents
 
 Run an English or Chinese split:
 
@@ -228,7 +227,7 @@ string-encoded list.
 
 Results are written under `results/<method>/`.
 
-## Evaluation
+## 📊 Evaluation
 
 Evaluate a generated result directory with the same language as the query and
 sandbox data:
@@ -253,7 +252,7 @@ The hardened evaluator additionally enforces:
 - exact entity names and canonical concept values from the installed sandbox;
 - safe DSL execution and legacy apostrophe normalization.
 
-## Agent Environment and Harness
+## 🛠️ Agent Environment and Harness
 
 `agent_env` exposes ChinaTravel through structured Python, CLI, HTTP, MCP, Chat
 Completions tool-call, and Responses function-call interfaces.
@@ -276,7 +275,7 @@ because it may contain provider credentials. See the
 [Agent Environment guide](agent_env/README.md) for OpenCode, Codex, resume,
 output, HTTP, and MCP details.
 
-## Synthetic Query Generation
+## 🧩 Synthetic Query Generation
 
 The generator samples executable constraints only from already valid seed
 plans, validates every candidate, validates the final combination again, and
@@ -311,7 +310,7 @@ python -m synthetic_query_generation.audit \
 Constraint families and individual template keys can be enabled, disabled, or
 prioritized independently. See [Synthetic Query Generation](synthetic_query_generation/README.md).
 
-## Translation and Data Repair
+## 🌐 Translation and Data Repair
 
 The translation pipeline supports OpenAI-compatible Chat Completions APIs,
 custom `base_url`, headers, model parameters, concurrency, and top-level
@@ -342,7 +341,7 @@ instead. The archive produced by this maintenance tool contains a manifest,
 change report, and checksums. See
 [Fixed Sandbox Export](scripts/SANDBOX_EXPORT.md).
 
-## Tests
+## ✅ Tests
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
@@ -353,7 +352,7 @@ The regression suite covers bilingual propagation, query resolution, evaluator
 grounding and scoring, chronology, meal limits, performance caches, safe DSL
 control flow, synthetic constraints, and translation repair.
 
-## Documentation
+## 📚 Documentation
 
 - [Chinese README / 中文说明](README.zh-CN.md)
 - [Environment](chinatravel/environment/readme.md)
@@ -365,12 +364,12 @@ control flow, synthetic constraints, and translation repair.
 - [Post-competition release validation](docs/RELEASE_VALIDATION.md)
 - [TPC@AIC 2025](TPC@AIC2025/readme.md)
 
-## Competition Archives
+## 🏆 Competition Archives
 
 - [TPC@IJCAI 2026](https://chinatravel-competition.github.io/IJCAI2026/)
 - [TPC@IJCAI 2025](https://chinatravel-competition.github.io/IJCAI2025/)
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 We thank [Stefan Schneider](https://github.com/stefanbschneider) and Team
 fabiundstefan, including [Fabian Missbrenner](https://github.com/fabufab), for the
@@ -392,13 +391,13 @@ evaluation, prompts, setup, and documentation. We are additionally grateful to
 and to [Niels Rogge](https://github.com/NielsRogge) for encouraging the public
 sandbox release on Hugging Face.
 
-## Contact
+## ✉️ Contact
 
 For questions, contact [Jie-Jing Shao](mailto:shaojj@lamda.nju.edu.cn),
 [Bo-Wen Zhang](mailto:221900200@smail.nju.edu.cn), or
 [Xiao-Wen Yang](mailto:yangxw@lamda.nju.edu.cn).
 
-## Citation
+## 📌 Citation
 
 ```bibtex
 @inproceedings{shao2026chinatravel,

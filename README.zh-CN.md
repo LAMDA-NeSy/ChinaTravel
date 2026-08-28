@@ -1,9 +1,8 @@
-# ChinaTravel
+<center>
+  <h1>[ICLR'26] ChinaTravel：面向语言智能体、支持组合约束验证的开放式真实旅行规划基准</h1>
+</center>
 
 [English](README.md) | [简体中文](README.zh-CN.md)
-
-**ChinaTravel：面向语言智能体、支持组合约束验证的开放式真实旅行规划基准**
-（ICLR 2026）
 
 ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、自然语言需求、
 可执行 DSL 约束、常识验证和偏好评分。
@@ -18,7 +17,7 @@ ChinaTravel 是一个真实旅行规划基准，包含结构化沙盒数据、�
 [![TPC@IJCAI2025](https://img.shields.io/badge/竞赛-TPC%40IJCAI2025-green)](https://chinatravel-competition.github.io/IJCAI2025/)
 [![TPC@AIC2025](https://img.shields.io/badge/竞赛-TPC%40AIC2025-green)](TPC@AIC2025/readme.md)
 
-## 新闻
+## 🏆 新闻
 
 ### TPC@IJCAI 2026
 
@@ -37,7 +36,7 @@ ChinaTravel 入选 IJCAI 2025 Travel Planning Challenge 官方基准。该赛事
 ChinaTravel 同时支持了 AIC 2025 Travel Planning Challenge。赛事设置、测评指标、
 提交格式和测评环境保留在[赛事归档](TPC@AIC2025/readme.md)中。
 
-## 更新日志
+## 📝 更新日志
 
 ### 2026.08
 
@@ -85,7 +84,7 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
   [开源实现](https://github.com/Atharva-Gundawar/LLM-Modulo-prompts)。
 - 增加 Qwen3-8B 和 Qwen3-4B 本地推理支持。
 
-## 数据发布
+## 📦 数据发布
 
 | 资源 | Hugging Face | 魔搭 |
 | --- | --- | --- |
@@ -96,7 +95,7 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
 splits，以及完整的 2,000 条 `TPC2026_phase2` 数据和其中 100 条
 `competition_test` split。
 
-## 目录结构
+## 🗂️ 目录结构
 
 | 路径 | 用途 |
 | --- | --- |
@@ -108,7 +107,7 @@ splits，以及完整的 2,000 条 `TPC2026_phase2` 数据和其中 100 条
 | `run_exp.py`、`run_tpc.py` | Agent 运行入口 |
 | `eval_exp.py`、`eval_tpc.py` | 标准测评与 TPC 测评入口 |
 
-## 安装
+## 🚀 安装
 
 `pyproject.toml` 要求 Python 3.12 或更高版本。
 
@@ -144,7 +143,7 @@ chinatravel/environment/database_en/    # 英文沙盒
 运行时所选语言的沙盒必须存在。为保持向后兼容，标准运行和测评脚本默认使用中文；
 英文数据必须显式传入 `--lang en`。
 
-## 模型运行时
+## 🤖 模型运行时
 
 可以使用 `deepseek`、`gpt-4o`、`glm4-plus` 等内置别名，也可以直接指定任意
 OpenAI-compatible 服务提供的模型名。
@@ -171,7 +170,7 @@ export CHINATRAVEL_OPENAI_TOKEN_LIMIT_ARG="max_tokens"
 
 Responses 模式要求 `openai>=1.66.0`。密钥只能放在环境变量或已忽略的本地配置中。
 
-## 运行 Agent
+## ▶️ 运行 Agent
 
 运行英文或中文 split：
 
@@ -207,7 +206,7 @@ python run_exp.py \
 
 结果保存在 `results/<method>/`。
 
-## 测评
+## 📊 测评
 
 结果、Query 和沙盒必须使用同一种语言：
 
@@ -228,7 +227,7 @@ TPC 测评器会报告 schema、常识、硬约束、FPR 和偏好指标。未�
 - 实体名称和概念值是否与当前沙盒中的规范值完全一致；
 - DSL 是否安全执行，以及历史单引号 POI 名称是否正确解析。
 
-## Agent 环境与 Harness
+## 🛠️ Agent 环境与 Harness
 
 `agent_env` 提供 Python、CLI、HTTP、MCP、Chat Completions tool call 和
 Responses function call 接口。
@@ -250,7 +249,7 @@ python agent_env/scripts/solve_script_with_harness.py
 OpenCode、Codex、断点续跑、输出文件、HTTP 和 MCP 的详细说明见
 [Agent 环境中文文档](agent_env/README.zh-CN.md)。
 
-## 合成 Query 生成
+## 🧩 合成 Query 生成
 
 生成器只从已经有效的 seed plan 中采样可执行约束；每条候选约束和最终约束组合
 都会再次验证，并生成可审计的 manifest。
@@ -283,7 +282,7 @@ python -m synthetic_query_generation.audit \
 约束族和单个模板 key 都可以独立启用、禁用或提高采样优先级。详细说明见
 [合成 Query 生成中文文档](synthetic_query_generation/README.zh-CN.md)。
 
-## 翻译与数据修复
+## 🌐 翻译与数据修复
 
 翻译流程支持 OpenAI-compatible Chat Completions、自定义 `base_url`、请求头、
 模型参数、并发数和通过 `extra_body` 添加的 JSON 顶层请求字段。它结合规则与 LLM
@@ -310,7 +309,7 @@ python scripts/export_fixed_sandbox.py artifacts/sandbox/ChinaTravel_sandbox_en_
 普通用户应直接下载 Hugging Face 或魔搭上的当前版本。维护工具生成的压缩包包含
 manifest、修改报告和校验和，详见[修复版沙盒导出说明](scripts/SANDBOX_EXPORT.md)。
 
-## 测试
+## ✅ 测试
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
@@ -320,7 +319,7 @@ python -m compileall -q chinatravel agent_env scripts synthetic_query_generation
 回归测试覆盖双语传播、Query 解析、测评实体落库与计分、时间顺序、早餐限制、性能缓存、
 DSL 安全控制流、合成约束和翻译修复。
 
-## 文档
+## 📚 文档
 
 - [英文 README](README.md)
 - [环境数据](chinatravel/environment/readme.md)
@@ -332,12 +331,12 @@ DSL 安全控制流、合成约束和翻译修复。
 - [赛后版本验证报告](docs/RELEASE_VALIDATION.md)
 - [TPC@AIC 2025](TPC@AIC2025/readme.md)
 
-## 历届比赛
+## 🏆 历届比赛
 
 - [TPC@IJCAI 2026](https://chinatravel-competition.github.io/IJCAI2026/)
 - [TPC@IJCAI 2025](https://chinatravel-competition.github.io/IJCAI2025/)
 
-## 致谢
+## 🙏 致谢
 
 感谢 [Stefan Schneider](https://github.com/stefanbschneider) 和 Team
 fabiundstefan，包括 [Fabian Missbrenner](https://github.com/fabufab)，以负责任的方式
@@ -356,13 +355,13 @@ fabiundstefan，包括 [Fabian Missbrenner](https://github.com/fabufab)，以负
 [@lucmek](https://huggingface.co/lucmek) 协助修正 Hugging Face Query 数据，并感谢
 [Niels Rogge](https://github.com/NielsRogge) 建议在 Hugging Face 公开发布沙盒数据。
 
-## 联系方式
+## ✉️ 联系方式
 
 如有问题，请联系 [Jie-Jing Shao](mailto:shaojj@lamda.nju.edu.cn)、
 [Bo-Wen Zhang](mailto:221900200@smail.nju.edu.cn) 或
 [Xiao-Wen Yang](mailto:yangxw@lamda.nju.edu.cn)。
 
-## 引用
+## 📌 引用
 
 ```bibtex
 @inproceedings{shao2026chinatravel,
