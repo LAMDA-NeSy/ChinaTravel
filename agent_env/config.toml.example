@@ -4,7 +4,7 @@ lang = "en"
 harness = "opencode"
 method = ""
 work_dir = ""
-tool_python = "UV_CACHE_DIR=/tmp/uv_cache uv run python"
+tool_python = "uv run python"
 uid = ""
 limit = 1
 no_run_harness = false

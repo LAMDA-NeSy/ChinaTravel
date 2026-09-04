@@ -1,23 +1,15 @@
 
 
 import argparse
+import ast
 
 import numpy as np
 
 import re
-import sys
 import os
 import json
 
 import time
-project_root_path = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-))
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-#
-sys.path.append('./../')
 
 from chinatravel.agent.utils import Logger, NpEncoder
 from chinatravel.agent.nesy_agent.utils import time_compare_if_earlier_equal, add_time_delta
@@ -76,7 +68,7 @@ class LLMDrivenAgent(NesyAgent):
         match = re.search(r'IDList:\s*(\[[^\]]+\])', answer)
         # if match:
         try:
-            intercity_transport_list = eval(match.group(1))
+            intercity_transport_list = ast.literal_eval(match.group(1))
             print('selected intercity_transports: ',intercity_transport_list)
             # print(intercity_transport_list)
 
@@ -128,7 +120,7 @@ class LLMDrivenAgent(NesyAgent):
         match = re.search(r'IDList:\s*(\[[^\]]+\])', answer)
         # if match:
         try:
-            intercity_transport_list = eval(match.group(1))
+            intercity_transport_list = ast.literal_eval(match.group(1))
             print('selected intercity_transports: ',intercity_transport_list)
 
             # print(intercity_transport_list)
@@ -263,7 +255,7 @@ class LLMDrivenAgent(NesyAgent):
             match = re.search(r'AttractionNameList:\s*(\[[^\]]+\])', answer)
             if match:
                 try:
-                    attraction_list = eval(match.group(1))
+                    attraction_list = ast.literal_eval(match.group(1))
                 except:
                     print("!!!Error in eval attraction_list")
             print('selected attractions: ',attraction_list)
@@ -320,7 +312,7 @@ class LLMDrivenAgent(NesyAgent):
             match = re.search(r'RestaurantNameList:\s*(\[[^\]]+\])', answer)
             if match:
                 try:
-                    restaurant_list = eval(match.group(1))
+                    restaurant_list = ast.literal_eval(match.group(1))
                 except:
                     print("!!!Error in eval restaurant_list")
             print('selected restaurants: ',restaurant_list)
@@ -491,14 +483,15 @@ if __name__ == '__main__':
     parser.add_argument('--splits','-l',type=str, default = "easy",choices=["easy", "medium", "human"], help="query subset")
     parser.add_argument('--index','-i',type=str, default = None, help="query index")
     parser.add_argument('--skip-exist','-sk',type=int, default =0, help="skip if the plan exists")
-    parser.add_argument('--llm','-m',type=str, default="deepseek", choices=["deepseek", "gpt-4o", "glm4-plus"])
+    parser.add_argument('--llm','-m',type=str, default=None)
     parser.add_argument('--oracle_translation', action='store_true', help='Set this flag to enable oracle translation.')
 
     args = parser.parse_args()
 
     # from eval.test import load_query
-    from agent.llms import Deepseek, GPT4o, GLM4Plus
-    from environment.world_env import WorldEnv
+    from chinatravel.agent.llms import create_llm
+    from chinatravel.agent.load_model import build_method_name
+    from chinatravel.environment.world_env import WorldEnv
 
     env = WorldEnv()
 
@@ -512,19 +505,13 @@ if __name__ == '__main__':
     if args.index is not None:
         query_index = [args.index]
 
-    if args.llm == "deepseek":
-        llm = Deepseek()
-    elif args.llm == "gpt-4o":
-        llm = GPT4o()
-    elif args.llm == "glm4-plus":
-        llm = GLM4Plus()
+    llm = create_llm(args.llm)
 
-    method = "LLMNeSy"
-
-    method = method + "_" + args.llm
-
-    if args.oracle_translation:
-        method = method + "_OracleTranslation"
+    method = build_method_name(
+        "LLMNeSy",
+        args.llm,
+        oracle_translation=args.oracle_translation,
+    )
 
     cache_dir = os.path.join(project_root_path, "cache")
 

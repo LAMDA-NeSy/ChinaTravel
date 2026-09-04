@@ -1,27 +1,20 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
-import pandas as pd
-
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-if project_root_path not in sys.path:
-    sys.path.append(project_root_path)
-
 import json
-from chinatravel.environment.world_env import WorldEnv
-from chinatravel.evaluation.utils import Attractions
+
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
 from chinatravel.symbol_verification.concept_func import set_concept_func_lang
 
-from chinatravel.symbol_verification.preference import evaluate_preference_py
-env = WorldEnv()
-attractions = Attractions()
-goto = env.transportation.goto
-_TOOLS_BY_LANG = {
-    "zh": (env, attractions, goto)
-}
+
+_current_lang = "zh"
+_env_by_lang = {}
+_attractions_by_lang = {}
+_evaluate_preference_py = None
+
+
+def _pd():
+    import pandas as pd
+
+    return pd
 
 
 def _infer_lang(symbolic_input=None, plan_json=None):
@@ -36,27 +29,40 @@ def _infer_lang(symbolic_input=None, plan_json=None):
 
 
 def _set_preference_lang(lang):
-    global env, attractions, goto
-    lang = normalize_lang(lang)
-    if lang not in _TOOLS_BY_LANG:
-        lang_env = WorldEnv(lang=lang)
-        lang_attractions = Attractions(lang=lang)
-        _TOOLS_BY_LANG[lang] = (lang_env, lang_attractions, lang_env.transportation.goto)
-    env, attractions, goto = _TOOLS_BY_LANG[lang]
-    set_concept_func_lang(lang)
+    global _current_lang
+    _current_lang = normalize_lang(lang)
+    set_concept_func_lang(_current_lang)
 
-city_dict = {
-    "北京": "beijing",
-    "上海": "shanghai",
-    "南京": "nanjing",
-    "苏州": "suzhou",
-    "杭州": "hangzhou",
-    "深圳": "shenzhen",
-    "成都": "chengdu",
-    "武汉": "wuhan",
-    "广州": "guangzhou",
-    "重庆": "chongqing",
-}
+
+def _get_env(lang=None):
+    lang = normalize_lang(lang or _current_lang)
+    if lang not in _env_by_lang:
+        from chinatravel.environment.world_env import WorldEnv
+
+        _env_by_lang[lang] = WorldEnv(lang=lang)
+    return _env_by_lang[lang]
+
+
+def _get_attractions(lang=None):
+    lang = normalize_lang(lang or _current_lang)
+    if lang not in _attractions_by_lang:
+        from chinatravel.evaluation.utils import Attractions
+
+        _attractions_by_lang[lang] = Attractions(lang=lang)
+    return _attractions_by_lang[lang]
+
+
+def _get_evaluate_preference_py():
+    global _evaluate_preference_py
+    if _evaluate_preference_py is None:
+        from chinatravel.symbol_verification.preference import evaluate_preference_py
+
+        _evaluate_preference_py = evaluate_preference_py
+    return _evaluate_preference_py
+
+
+def _goto(*args, **kwargs):
+    return _get_env().transportation.goto(*args, **kwargs)
 
 
 def calc_time_delta(st_time, ed_time):
@@ -116,7 +122,7 @@ def near_poi(plan_json, poi_list):
     dist_cost = 0
     for poi in poi_list:
         # print("city", city, "accommodation_name", accommodation_name, "poi", poi)
-        dist_cost += goto(
+        dist_cost += _goto(
             city, accommodation_name, poi, start_time="00:00", transport_type="walk"
         )[0]["distance"]
     average_dist_cost = dist_cost / poi_count
@@ -185,17 +191,11 @@ def attraction_satisfaction(plan_json):
     recommend_time_list = []
     actual_time_list = []
 
-    # datapath=os.path.dirname(__file__) + "/eval_annotation/attractions/{}/attractions_tag.csv".format(city_dict[city])
-    # ood_attractions_dataframe = pd.read_csv(datapath)
-
-    # datapath=os.path.dirname(__file__) + "/eval_annotation/attractions/{}/attractions_tag.csv".format(city_dict[city])
-    # ood_attractions_dataframe = pd.read_csv(datapath)
-
     for plan_of_day in plan:
         for activity in plan_of_day["activities"]:
             if activity["type"] == "attraction":
                 attraction_name = activity["position"]
-                attrction_info = attractions.select(
+                attrction_info = _get_attractions().select(
                     city, key="name", func=lambda x: x == attraction_name
                 ).iloc[0]
                 # attrction_info = ood_attractions_dataframe[ood_attractions_dataframe["name"] == attraction_name].iloc[0]
@@ -239,7 +239,7 @@ def indoor_attraction_ratio(plan_json):
                 attraction_count += 1
                 attraction_name = activity["position"]
                 city = plan_json["target_city"]
-                attraction_info = attractions.select(
+                attraction_info = _get_attractions().select(
                     city, key="name", func=lambda x: x == attraction_name
                 ).iloc[0]
                 if attraction_info["indoor"] == 1:
@@ -259,7 +259,7 @@ def popular_attraction_ratio(plan_json):
                 attraction_count += 1
                 attraction_name = activity["position"]
                 city = plan_json["target_city"]
-                attraction_info = attractions.select(
+                attraction_info = _get_attractions().select(
                     city, key="name", func=lambda x: x == attraction_name
                 ).iloc[0]
                 popular_score_sum += attraction_info["popularity"]
@@ -323,7 +323,7 @@ def evaluate_preference(query_index, query_data, result_data, commonsense_pass, 
             {"data_id": query_index[i]}
             | _evaluate_preference(symbolic_input, plan_json, lang=lang)
         )
-    result_df = pd.DataFrame(result)
+    result_df = _pd().DataFrame(result)
     return result_df
 
 def evaluate_preference_v2(query_index, query_data, result_data, pass_id, lang=None):
@@ -336,7 +336,6 @@ def evaluate_preference_v2(query_index, query_data, result_data, pass_id, lang=N
             continue
         
         
-        evaluate_preference_py
         symbolic_input = query_data[query_index[i]]
         plan_json = result_data[query_index[i]]
         _set_preference_lang(lang or _infer_lang(symbolic_input, plan_json))
@@ -355,12 +354,12 @@ def evaluate_preference_v2(query_index, query_data, result_data, pass_id, lang=N
         op_concept = concept.split(" ")[1]
         code = pre_py[index + 1 :]
 
-        res = evaluate_preference_py([(op, op_concept, code)], plan_json)[0]
+        res = _get_evaluate_preference_py()([(op, op_concept, code)], plan_json)[0]
 
         result.append(
             {"data_id": query_index[i], "concept": res}
         )
-    result_df = pd.DataFrame(result)
+    result_df = _pd().DataFrame(result)
     return result_df
 
 

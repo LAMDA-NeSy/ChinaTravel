@@ -1,22 +1,13 @@
 
-
 import os
-import sys
 
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+from chinatravel.agent.base import BaseAgent
 
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-
-from agent.base import BaseAgent
-
-from agent.nesy_verifier.prompts.llm_modulo import INITIAL_PROMPT, BACK_PROMPT
-from agent.nesy_verifier.prompts.poi_selection import HOTEL_SELECTION_INSTRUCTION, ATTRACTION_SELECTION_INSTRUCTION, RESTAURANT_SELECTION_INSTRUCTION, TRANSPORT_GO_SELECTION_INSTRUCTION, TRANSPORT_BACK_SELECTION_INSTRUCTION
+from chinatravel.agent.nesy_verifier.prompts.llm_modulo import INITIAL_PROMPT, BACK_PROMPT
+from chinatravel.agent.nesy_verifier.prompts.poi_selection import HOTEL_SELECTION_INSTRUCTION, ATTRACTION_SELECTION_INSTRUCTION, RESTAURANT_SELECTION_INSTRUCTION, TRANSPORT_GO_SELECTION_INSTRUCTION, TRANSPORT_BACK_SELECTION_INSTRUCTION
 # from symbol_verification.commonsense_constraint import func_commonsense_constraints
-from agent.nesy_verifier.verifier.commonsense_constraint_nl import collect_commonsense_constraints_error
-from agent.nesy_verifier.verifier.personal_constraint_nl import collect_personal_error
+from chinatravel.agent.nesy_verifier.verifier.commonsense_constraint_nl import collect_commonsense_constraints_error
+from chinatravel.agent.nesy_verifier.verifier.personal_constraint_nl import collect_personal_error
 
 import pandas as pd
 import ast
@@ -26,7 +17,7 @@ from chinatravel.agent.utils import Logger
 import numpy as np
 import re
 import json
-from json_repair import repair_json
+from chinatravel.json_utils import repair_json
 import time
 from tqdm import tqdm
 
@@ -525,7 +516,7 @@ class LLMModuloAgent(BaseAgent):
         selected_idx = []
 
         try:
-            AttrNameList = eval(answer)
+            AttrNameList = ast.literal_eval(answer)
             print('selected AttrNameList: ',AttrNameList) 
             for cand_i in AttrNameList:
                 np_where = np.where(attraction_info['name']==cand_i)[0]
@@ -560,7 +551,7 @@ class LLMModuloAgent(BaseAgent):
         selected_idx = []
 
         try:
-            RestNameList = eval(answer)
+            RestNameList = ast.literal_eval(answer)
             print('selected RestNameList: ',RestNameList) 
             for cand_i in RestNameList:
                 np_where = np.where(restaurant_info['name']==cand_i)[0]
@@ -589,7 +580,7 @@ class LLMModuloAgent(BaseAgent):
 
         selected_train_idx, selected_flight_idx = [], []
         try:
-            TransportList = eval(answer)
+            TransportList = ast.literal_eval(answer)
             print('selected TransportList: ',TransportList) 
             for cand_i in TransportList:
 
@@ -624,7 +615,7 @@ class LLMModuloAgent(BaseAgent):
         print(answer)
         selected_train_idx, selected_flight_idx = [], []
         try:
-            TransportList = eval(answer)
+            TransportList = ast.literal_eval(answer)
             print('selected TransportList: ',TransportList)
             for cand_i in TransportList:
                 if (len(train_info)>0):

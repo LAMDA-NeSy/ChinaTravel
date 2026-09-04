@@ -1,11 +1,14 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append("../..")
-from environment.tools import *
+import ast
 from pandas import DataFrame
 from typing import Any
+from chinatravel.environment.tools import (
+    Accommodations,
+    Attractions,
+    IntercityTransport,
+    Poi,
+    Restaurants,
+    Transportation,
+)
 from chinatravel.environment.language import city_names, normalize_lang
 
 
@@ -28,9 +31,7 @@ class EnvOutput:
         if key == "data":
             return self._data
         if key == "whole_data":
-            return (
-                self._original_data if isinstance(self._data, DataFrame) else self._data
-            )
+            return self._original_data if hasattr(self, "_original_data") else self._data
         if key == "str":
             return str(self)
         raise self.KeyError(
@@ -42,7 +43,7 @@ class EnvOutput:
             "success": self._success,
             "data": self._data,
             "whole_data": (
-                self._original_data if isinstance(self._data, DataFrame) else self._data
+                self._original_data if hasattr(self, "_original_data") else self._data
             ),
             "str": str(self),
         }
@@ -64,20 +65,22 @@ class EnvOutput:
         return str(self._data)
 
     def next_page(self):
-        if not isinstance(self._data, DataFrame):
+        if not hasattr(self, "_original_data"):
             return (
                 "next_page() is not supported for this data type:"
                 + str(type(self._data))
                 + "\nonly DataFrame support next_page()."
                 + "\nMake sure you are using the correct index. -1 is the lastest result."
             )
-        if (self._page_idx - 1) * 10 >= len(self._original_data):
-            self._data = "No more data."
+        next_page_idx = self._page_idx + 1
+        start = next_page_idx * 10
+        if start >= len(self._original_data):
+            self._page_idx = next_page_idx
+            self._data = self._original_data.iloc[0:0]
+            return self
 
-        self._page_idx += 1
-        self._data = self._original_data.iloc[
-            self._page_idx * 10 : (self._page_idx + 1) * 10
-        ]
+        self._page_idx = next_page_idx
+        self._data = self._original_data.iloc[start : start + 10]
         return self
 
 
@@ -107,41 +110,134 @@ class WorldEnv:
         """
         Call the API by command string in the format of python function call.
         """
-        # init env to execute the command directly
-        attractions_keys = self.attractions.keys
-        attractions_types = self.attractions.get_type_list
-        attractions_select = self.attractions.select
-        attractions_id_is_open = self.attractions.id_is_open
-        attractions_nearby = self.attractions.nearby
-
-        accommodations_keys = self.accommodations.keys
-        accommodations_select = self.accommodations.select
-        accommodations_nearby = self.accommodations.nearby
-
-        restaurants_select = self.restaurants.select
-        restaurants_keys = self.restaurants.keys
-        restaurants_nearby = self.restaurants.nearby
-        restaurants_id_is_open = self.restaurants.id_is_open
-        restaurants_cuisine = self.restaurants.get_cuisine_list
-        restaurants_with_recommended_food = (
-            self.restaurants.restaurants_with_recommended_food
-        )
-
-        goto = self.transportation.goto
-        intercity_transport_select = self.intercitytransport.select
-        poi_lat_lon_search = self.poi.search
-
-        next_page = self.next_page
-        Results = self.results
-
+        namespace = self._command_namespace()
         try:
-            res = eval(cmd_str)
+            res = self._execute_command(cmd_str, namespace)
             if not isinstance(res, EnvOutput):
                 res = EnvOutput(True, res)
         except Exception as e:
             res = EnvOutput(False, "Invalid command.\n" + str(e))
         self.results.append(res)
         return self.results[-1]
+
+    def _execute_command(self, cmd_str, namespace):
+        expr = ast.parse(cmd_str, mode="eval")
+        call = expr.body
+        if not isinstance(call, ast.Call):
+            raise ValueError("Command must be a function call.")
+        if not isinstance(call.func, ast.Name):
+            raise ValueError("Command function must be a registered tool name.")
+        func_name = call.func.id
+        if func_name not in namespace:
+            raise ValueError(f"Unknown command function: {func_name}")
+
+        args = [self._parse_command_argument(arg) for arg in call.args]
+        kwargs = {}
+        for keyword in call.keywords:
+            if keyword.arg is None:
+                raise ValueError("Expanded keyword arguments are not supported.")
+            kwargs[keyword.arg] = self._parse_command_argument(keyword.value)
+        return namespace[func_name](*args, **kwargs)
+
+    def _parse_command_argument(self, node):
+        if isinstance(node, ast.Lambda):
+            return self._build_safe_lambda(node)
+        return ast.literal_eval(node)
+
+    def _build_safe_lambda(self, node):
+        if len(node.args.args) != 1 or node.args.vararg or node.args.kwarg:
+            raise ValueError("Only one-argument lambdas are supported.")
+        arg_name = node.args.args[0].arg
+
+        def predicate(value):
+            return self._eval_lambda_expr(node.body, {arg_name: value})
+
+        return predicate
+
+    def _eval_lambda_expr(self, node, variables):
+        if isinstance(node, ast.Constant):
+            return node.value
+        if isinstance(node, ast.Name):
+            if node.id in variables:
+                return variables[node.id]
+            if node.id in {"True", "False", "None"}:
+                return {"True": True, "False": False, "None": None}[node.id]
+            raise ValueError(f"Unsupported lambda name: {node.id}")
+        if isinstance(node, ast.UnaryOp):
+            operand = self._eval_lambda_expr(node.operand, variables)
+            if isinstance(node.op, ast.Not):
+                return not operand
+            if isinstance(node.op, ast.USub):
+                return -operand
+            raise ValueError("Unsupported lambda unary operator.")
+        if isinstance(node, ast.BoolOp):
+            values = [self._eval_lambda_expr(value, variables) for value in node.values]
+            if isinstance(node.op, ast.And):
+                return all(values)
+            if isinstance(node.op, ast.Or):
+                return any(values)
+            raise ValueError("Unsupported lambda boolean operator.")
+        if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+            values = [self._eval_lambda_expr(value, variables) for value in node.elts]
+            if isinstance(node, ast.Tuple):
+                return tuple(values)
+            if isinstance(node, ast.Set):
+                return set(values)
+            return values
+        if isinstance(node, ast.Compare):
+            left = self._eval_lambda_expr(node.left, variables)
+            for op, comparator in zip(node.ops, node.comparators):
+                right = self._eval_lambda_expr(comparator, variables)
+                if not self._compare_lambda_values(left, op, right):
+                    return False
+                left = right
+            return True
+        raise ValueError(f"Unsupported lambda expression: {node.__class__.__name__}")
+
+    def _compare_lambda_values(self, left, op, right):
+        if isinstance(op, ast.Eq):
+            return left == right
+        if isinstance(op, ast.NotEq):
+            return left != right
+        if isinstance(op, ast.Lt):
+            return left < right
+        if isinstance(op, ast.LtE):
+            return left <= right
+        if isinstance(op, ast.Gt):
+            return left > right
+        if isinstance(op, ast.GtE):
+            return left >= right
+        if isinstance(op, ast.In):
+            return left in right
+        if isinstance(op, ast.NotIn):
+            return left not in right
+        if isinstance(op, ast.Is):
+            return left is right
+        if isinstance(op, ast.IsNot):
+            return left is not right
+        raise ValueError("Unsupported lambda comparison operator.")
+
+    def _command_namespace(self):
+        return {
+            "accommodations_keys": self.accommodations.keys,
+            "accommodations_nearby": self.accommodations.nearby,
+            "accommodations_select": self.accommodations.select,
+            "attractions_id_is_open": self.attractions.id_is_open,
+            "attractions_keys": self.attractions.keys,
+            "attractions_nearby": self.attractions.nearby,
+            "attractions_select": self.attractions.select,
+            "attractions_types": self.attractions.get_type_list,
+            "goto": self.transportation.goto,
+            "intercity_transport_select": self.intercitytransport.select,
+            "next_page": self.next_page,
+            "poi_lat_lon_search": self.poi.search,
+            "restaurants_cuisine": self.restaurants.get_cuisine_list,
+            "restaurants_id_is_open": self.restaurants.id_is_open,
+            "restaurants_keys": self.restaurants.keys,
+            "restaurants_nearby": self.restaurants.nearby,
+            "restaurants_select": self.restaurants.select,
+            "restaurants_with_recommended_food": self.restaurants.restaurants_with_recommended_food,
+        }
 
     def next_page(self):
         """
@@ -163,6 +259,8 @@ __doc__ = """
 This file provides an interface to access the virtual world environment.
 You can use the WorldEnv as long as you instance WorldEnv class and call the APIs with the command string.
 The command string should be in the format of python function call,
+limited to registered API names, literal arguments, keyword arguments, and
+simple one-argument lambda predicates.
 
 for example:
 ```python
@@ -266,8 +364,9 @@ end_city: The end city name.
 intercity_type: The type of intercity transportation, must in ['train', 'airplane'].
 earliest_leave_time: The earliest leave time in the format 'HH:MM'.
 
-(17) Results[index] Results[index].next_page()
-Description: Get the result of the index or go to the next page of the result.
+(17) next_page()
+Description: Get the next page of the latest paginated query result.
+Direct result-history expressions such as Results[index] are not part of the restricted command surface.
 """
 
 

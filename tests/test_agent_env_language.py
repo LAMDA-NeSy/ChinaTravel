@@ -12,6 +12,7 @@ from agent_env.scripts.solve_script_with_harness import (
     normalize_lang,
     visible_query,
 )
+from chinatravel.evaluation import preference
 
 
 class _Rows:
@@ -110,6 +111,27 @@ class AgentEnvironmentLanguageTests(unittest.TestCase):
         self.assertTrue(result["all_pass"])
         self.assertEqual(commonsense_evaluator.call_args.kwargs["lang"], "en")
         self.assertEqual(hard_evaluator.call_args.kwargs["lang"], "en")
+
+    def test_preference_evaluator_infers_english_environment(self):
+        uid = "sample-uid"
+        query = {
+            "start_city": "Beijing",
+            "target_city": "Shanghai",
+            "preference_py": "max concept\nresult = True",
+        }
+        set_language = Mock()
+
+        with patch.object(preference, "_set_preference_lang", set_language), patch.object(
+            preference,
+            "_get_evaluate_preference_py",
+            return_value=lambda constraints, plan: [True],
+        ):
+            result = preference.evaluate_preference_v2(
+                [uid], {uid: query}, {uid: {}}, [uid]
+            )
+
+        set_language.assert_called_once_with("en")
+        self.assertTrue(result.loc[0, "concept"])
 
     def test_invalid_language_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "must be 'zh' or 'en'"):

@@ -1,15 +1,6 @@
 import ast
 
-import os
-import sys
 from fuzzywuzzy import process as fuzzy_process
-
-
-project_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir)
-)
-if project_path not in sys.path:
-    sys.path.append(project_path)
 
 from chinatravel.environment.tools import Poi
 
@@ -295,13 +286,11 @@ class HardLogicPyChecker(CodeBlockChecker):
 
 def test_data():
     import os
-    import sys
     from tqdm import tqdm
 
     project_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir)
     )
-    sys.path.append(project_path)
     from chinatravel.data.load_datasets import load_json_file
 
     query_list = []

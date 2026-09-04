@@ -1,0 +1,83 @@
+{
+  "api": {
+    "provider": "openai_compatible",
+    "base_url": "https://api.deepseek.com",
+    "chat_completions_path": "/chat/completions",
+    "api_key_env": "TRANSLATION_API_KEY",
+    "api_key_required": true,
+    "auth_header": "Authorization",
+    "auth_scheme": "Bearer",
+    "extra_headers": {},
+    "model": "deepseek-chat",
+    "timeout_seconds": 120,
+    "retries": 3,
+    "workers": 32
+  },
+  "translation": {
+    "temperature": 0.7,
+    "max_tokens": 2048,
+    "max_tokens_field": "max_tokens",
+    "extra_body": {},
+    "accepted_finish_reasons": [
+      "stop"
+    ]
+  },
+  "audit": {
+    "paths": {
+      "source_dir": "TPC_IJCAI_2026_phase1",
+      "translated_dir": "TPC_IJCAI_2026_phase1_EN",
+      "uid_file": "TPC_IJCAI_2026_phase1.txt",
+      "output_dir": "translation_artifacts_phase1/audit",
+      "repaired_dir": "translation_artifacts_phase1/audit/repaired_data"
+    },
+    "api": {
+      "workers": 32,
+      "temperature": 0.2,
+      "max_tokens": 2048,
+      "extra_body": {}
+    },
+    "enabled": true,
+    "rules_only": false,
+    "fail_on_invalid": false,
+    "scope": "all",
+    "reuse_existing": true,
+    "prompt_version": 1,
+    "repair": {
+      "enabled": true,
+      "statuses": [
+        "invalid"
+      ],
+      "require_llm_invalid": true,
+      "reuse_existing": true,
+      "max_attempts": 2,
+      "verify_with_llm": true,
+      "prompt_version": 1,
+      "api": {
+        "temperature": 0.2,
+        "max_tokens": 2048
+      }
+    },
+    "reaudit": {
+      "enabled": true,
+      "source_verdict": "invalid",
+      "reuse_existing": true,
+      "confidence_threshold": 0.9,
+      "auto_apply": false,
+      "blind_prompt_version": 1,
+      "adjudication_prompt_version": 1,
+      "paths": {
+        "output_dir": "translation_artifacts_phase1/audit/thinking_reaudit"
+      },
+      "api": {
+        "workers": 1,
+        "temperature": 0.2,
+        "max_tokens": 4096,
+        "extra_body": {
+          "thinking": {
+            "type": "enabled"
+          }
+        }
+      }
+    }
+  }
+}

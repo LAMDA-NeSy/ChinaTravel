@@ -39,7 +39,7 @@
 
 - Added `agent_env/SKILL.md` with agent-oriented instructions for solving
   ChinaTravel queries through the local CLI.
-- Added `agent_env/scripts/solve_script_with_harness.py`, an agent harness that:
+- Added `agent_env.scripts.solve_script_with_harness`, an agent harness that:
   loads a query with oracle verifier fields for judging, hides oracle fields from
   the model prompt, calls the model non-interactively, saves the resulting plan
   under `results/<method>/<uid>.json`, and evaluates schema, commonsense, and hard

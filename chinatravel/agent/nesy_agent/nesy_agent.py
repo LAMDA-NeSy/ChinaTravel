@@ -1,22 +1,12 @@
-import sys
 import os
+import sys
 import time
-import argparse
 import pandas as pd
 import json
 import numpy as np
 
-sys.path.append("./../../../")
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-
-
-from agent.base import AbstractAgent, BaseAgent
-from agent.nesy_agent.utils import (
+from chinatravel.agent.base import BaseAgent
+from chinatravel.agent.nesy_agent.utils import (
     time_compare_if_earlier_equal,
     calc_cost_from_itinerary_wo_intercity,
     add_time_delta,
@@ -36,7 +26,7 @@ from chinatravel.symbol_verification.hard_constraint import (
 )
 from chinatravel.symbol_verification.preference import evaluate_preference_py
 
-from chinatravel.symbol_verification.concept_func import *
+from chinatravel.symbol_verification.concept_func import room_type, target_city
 from chinatravel.agent.nesy_agent.nl2sl_hybrid import nl2sl_reflect
 from copy import deepcopy
 
@@ -110,7 +100,7 @@ class NesyAgent(BaseAgent):
             else:
                 query = nl2sl_reflect(query, self.backbone_llm, lang=self.lang)
             if "error" in query:
-                query["hard_logic_py"] = {}
+                query["hard_logic_py"] = []
             save_json_file(query, file_path)
 
         return query
@@ -1823,13 +1813,14 @@ class NesyAgent(BaseAgent):
         if not info_return["success"]:
             return pd.DataFrame([])
         trans_info = info_return["data"]
+        if not isinstance(trans_info, pd.DataFrame):
+            return pd.DataFrame([])
         # print(poi_info)
         while True:
             info_i = self.env("next_page()")["data"]
-            if len(info_i) == 0:
+            if not isinstance(info_i, pd.DataFrame) or len(info_i) == 0:
                 break
-            else:
-                trans_info = pd.concat([trans_info, info_i], axis=0, ignore_index=True)
+            trans_info = pd.concat([trans_info, info_i], axis=0, ignore_index=True)
         # print(poi_info)
         return trans_info
 
@@ -1847,13 +1838,14 @@ class NesyAgent(BaseAgent):
         poi_info = self.env(
             "{func}('{city}', 'name', lambda x: True)".format(func=func_name, city=city)
         )["data"]
+        if not isinstance(poi_info, pd.DataFrame):
+            return pd.DataFrame([])
         # print(poi_info)
         while True:
             info_i = self.env("next_page()")["data"]
-            if len(info_i) == 0:
+            if not isinstance(info_i, pd.DataFrame) or len(info_i) == 0:
                 break
-            else:
-                poi_info = pd.concat([poi_info, info_i], axis=0, ignore_index=True)
+            poi_info = pd.concat([poi_info, info_i], axis=0, ignore_index=True)
 
         # print(poi_info)
         return poi_info
@@ -1879,11 +1871,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Set this flag to enable oracle translation.",
     )
+    parser.add_argument("--llm", "-m", type=str, default=None)
     args = parser.parse_args()
 
-    from evaluation.test import load_query
-    from agent.llms import Deepseek
-    from environment.world_env import WorldEnv
+    from chinatravel.data.load_datasets import load_query
+    from chinatravel.agent.llms import create_llm
+    from chinatravel.environment.world_env import WorldEnv
 
     env = WorldEnv()
 
@@ -1892,7 +1885,7 @@ if __name__ == "__main__":
     # print(query_index, query_data)
     print(len(query_index), "samples")
 
-    agent = NesyAgent(env=env, backbone_llm=Deepseek())
+    agent = NesyAgent(env=env, backbone_llm=create_llm(args.llm))
 
     if args.index is not None:
         query_index = [query_index[args.index]]

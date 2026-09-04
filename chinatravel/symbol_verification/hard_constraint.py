@@ -1,33 +1,21 @@
-import sys
 import os
 import json
 import re
 
-from chinatravel.environment.tools.accommodations.apis import Accommodations
-from chinatravel.environment.tools.restaurants.apis import Restaurants
-from chinatravel.environment.tools.attractions.apis import Attractions
-from chinatravel.environment.tools.intercity_transport.apis import IntercityTransport
-from chinatravel.environment.tools.transportation.apis import Transportation
 from chinatravel.environment.language import CITY_NAMES, normalize_lang
 
 from chinatravel.symbol_verification.concept_func import (
     func_dict,
-    normalize_concept_constraint_source,
-    normalize_poi_name,
     set_concept_func_lang,
 )
-from chinatravel.evaluation.utils import load_json_file
-
-import pandas as pd
+from chinatravel.symbol_verification.dsl import evaluate_expression, execute_dsl_code
 
 from copy import deepcopy
 
-accommodation = Accommodations()
-restaurants = Restaurants()
-attractions = Attractions()
-_TOOLS_BY_LANG = {
-    "zh": (accommodation, restaurants, attractions)
-}
+accommodation = None
+restaurants = None
+attractions = None
+_TOOLS_BY_LANG = {}
 
 
 def _infer_lang(symbolic_input):
@@ -44,6 +32,10 @@ def _set_tool_lang(lang):
     global accommodation, restaurants, attractions
     lang = normalize_lang(lang)
     if lang not in _TOOLS_BY_LANG:
+        from chinatravel.environment.tools.accommodations.apis import Accommodations
+        from chinatravel.environment.tools.restaurants.apis import Restaurants
+        from chinatravel.environment.tools.attractions.apis import Attractions
+
         _TOOLS_BY_LANG[lang] = (
             Accommodations(lang=lang),
             Restaurants(lang=lang),
@@ -124,8 +116,11 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
 
     target_city = symbolic_input["target_city"]
     start_city = symbolic_input["start_city"]
+    _set_tool_lang(_infer_lang(symbolic_input))
 
     if need_ood:
+        import pandas as pd
+
         ood_type_dict = {
             "ancient_style": "古风写真",
             "river_he_side": "河边",
@@ -247,7 +242,7 @@ def get_symbolic_concepts(symbolic_input, plan_json, need_ood=False):
 
             if not "position" in activity:
                 continue
-            position = normalize_poi_name(activity["position"])
+            position = activity["position"]
 
             if (
                 activity["type"] == "breakfast"
@@ -464,9 +459,7 @@ def evaluate_constraints(extracted_vars, hard_logic):
     results = []
     for constraint in hard_logic:
         try:
-            # Evaluate the constraint in a safe manner
-            result = eval(constraint, {"__builtins__": None}, extracted_vars)
-            results.append(result)
+            results.append(evaluate_expression(constraint, extracted_vars))
         except Exception as e:
             print(f"Error evaluating constraint '{constraint}': {e}")
             results.append(False)
@@ -488,28 +481,13 @@ for activity in allactivities(plan):
     # hard_logic_py.append(debug_logic_py)
     for constraint in hard_logic_py:
         original_constraint = constraint
-        constraint = normalize_concept_constraint_source(constraint)
         constraint = _normalize_legacy_hard_logic_py(constraint)
         vars_dict = deepcopy(func_dict)
         vars_dict["plan"] = plan
-        # exec(constraint, {"__builtins__": {"set": set, "print": print}}, vars_dict)
-        # results.append(vars_dict.get("result", False))
         try:
-            # Evaluate the constraint in a safe manner
-            exec(
-                constraint,
-                {
-                    "__builtins__": {
-                        "set": set,
-                    }
-                },
-                vars_dict,
-            )
+            execute_dsl_code(constraint, vars_dict, allowed_builtins={"set": set})
             res_i = vars_dict.get("result", False)
-            # print("result: ", res_i)
-            # print(type(res_i))
             results.append(bool(res_i))
-            # results.append(result)
         except Exception as e:
             if verbose:
                 print(f"Error evaluating constraint '{original_constraint}': {e}")
@@ -518,6 +496,7 @@ for activity in allactivities(plan):
     return results
 
 if __name__ == "__main__":
+    from chinatravel.evaluation.utils import load_json_file
 
     symbolic_input_list = []
     plan_json_list = []

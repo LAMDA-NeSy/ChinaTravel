@@ -1,22 +1,21 @@
-import sys
 import os
 import json
-import numpy as np
-from datasets import load_dataset as hg_load_dataset
-import ast
 
 project_root_path = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
 
 from chinatravel.environment.language import normalize_lang
 
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
+        try:
+            import numpy as np
+        except ImportError:
+            np = None
+        if np is None:
+            return super(NpEncoder, self).default(obj)
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):
@@ -24,6 +23,51 @@ class NpEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return super(NpEncoder, self).default(obj)
+
+
+DEFAULT_HUGGINGFACE_SPLITS = {
+    "easy",
+    "medium",
+    "human",
+    "preference_base50",
+    "preference0_base50",
+    "preference1_base50",
+    "preference2_base50",
+    "preference3_base50",
+    "preference4_base50",
+    "preference5_base50",
+}
+PREFERENCE_HUGGINGFACE_SPLITS = {
+    "preference0_base50",
+    "preference1_base50",
+    "preference2_base50",
+    "preference3_base50",
+    "preference4_base50",
+    "preference5_base50",
+}
+ORACLE_FIELDS = {"hard_logic", "hard_logic_py", "hard_logic_nl"}
+
+
+def _strip_oracle_fields(data_i):
+    for key in ORACLE_FIELDS:
+        data_i.pop(key, None)
+    return data_i
+
+
+def _validate_query_record(data_i):
+    if "hard_logic_py" in data_i and not isinstance(data_i["hard_logic_py"], list):
+        raise ValueError(
+            "Expected fixed ChinaTravel data where hard_logic_py is a list, "
+            f"got {type(data_i['hard_logic_py']).__name__} for {data_i.get('uid', '<unknown>')}."
+        )
+    return data_i
+
+
+def _load_huggingface_split(split):
+    from datasets import load_dataset as hg_load_dataset
+
+    config_name = "preference" if split in PREFERENCE_HUGGINGFACE_SPLITS else "default"
+    return hg_load_dataset("LAMDA-NeSy/ChinaTravel", name=config_name)[split].to_list()
 
 
 def _resolve_local_query_paths(data_dir, split, query_ids, lang):
@@ -125,19 +169,14 @@ def load_query_local(args, version="", verbose=False):
     )
     for query_id in query_id_list:
         with open(query_paths[query_id], encoding="utf-8") as query_file:
-            data_i = json.load(query_file)
+            data_i = _validate_query_record(json.load(query_file))
         if data_i.get("uid") != query_id:
             raise ValueError(
                 f"Query UID mismatch for {query_paths[query_id]}: "
                 f"expected {query_id!r}, got {data_i.get('uid')!r}"
             )
         if hasattr(args, 'oracle_translation') and not args.oracle_translation:
-            if "hard_logic" in data_i:
-                del data_i["hard_logic"]
-            if "hard_logic_py" in data_i:
-                del data_i["hard_logic_py"]
-            if "hard_logic_nl" in data_i:
-                del data_i["hard_logic_nl"]
+            _strip_oracle_fields(data_i)
         query_data[query_id] = data_i
 
     # print(query_data)
@@ -165,48 +204,27 @@ def load_query(args):
     if lang == "en":
         return load_query_local(args)
 
-    if not args.splits in ["easy", "medium", "human", "preference_base50",
-                           "preference0_base50", "preference1_base50", "preference2_base50",
-                           "preference3_base50", "preference4_base50", "preference5_base50"]:
+    if args.splits not in DEFAULT_HUGGINGFACE_SPLITS:
         return load_query_local(args)
-    config_name = "default"
-    if args.splits in ["preference0_base50", "preference1_base50", "preference2_base50",
-                       "preference3_base50", "preference4_base50", "preference5_base50"]:
-        config_name = "preference"
-    # elif args.splits in ["human"]:
-    #     config_name = "validation"
-    # elif args.splits in ["human1000"]:
-    #     config_name = "test"
-    query_data = hg_load_dataset("LAMDA-NeSy/ChinaTravel", name=config_name)[args.splits].to_list()
-
-
-    for data_i in query_data:
-        if "hard_logic_py" in data_i:
-            data_i["hard_logic_py"] = ast.literal_eval(data_i["hard_logic_py"])
+    query_data = [_validate_query_record(data_i) for data_i in _load_huggingface_split(args.splits)]
 
     query_id_list = [data_i["uid"] for data_i in query_data]
     data_dict = {}
     for data_i in query_data:
         if not getattr(args, "oracle_translation", False):
-            if "hard_logic" in data_i:
-                del data_i["hard_logic"]
-            if "hard_logic_py" in data_i:
-                del data_i["hard_logic_py"]
-            if "hard_logic_nl" in data_i:
-                del data_i["hard_logic_nl"]
+            _strip_oracle_fields(data_i)
 
         data_dict[data_i["uid"]] = data_i
 
     return query_id_list, data_dict
 
 
-import argparse
-argparser = argparse.ArgumentParser()
-argparser.add_argument("--splits", type=str, default="easy")
-argparser.add_argument("--lang", type=str, choices=["zh", "en"], default="zh")
-
 if __name__ == "__main__":
+    import argparse
 
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--splits", type=str, default="easy")
+    argparser.add_argument("--lang", type=str, choices=["zh", "en"], default="zh")
 
     # from datasets import load_dataset as hg_load_dataset
 

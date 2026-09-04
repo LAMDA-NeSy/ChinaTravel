@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from .examples_en import *
+from .examples_en import EXAMPLE
 
 import os
 

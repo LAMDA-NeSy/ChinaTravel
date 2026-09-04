@@ -3,14 +3,10 @@ import jsonschema
 from jsonschema import validate
 import os
 import pandas as pd
-import sys
 
 project_root_path = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
 
 from chinatravel.agent.utils import Logger, NpEncoder
 from chinatravel.environment.tools import Attractions

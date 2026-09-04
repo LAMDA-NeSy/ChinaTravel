@@ -2,7 +2,7 @@
 
 ## WorldEnv
 
-The `WorldEnv` class is a wrapper of the APIs. You can use it by instancing `WorldEnv` class and call the APIs with the command string. Note that the command string should be in the format of python function call and all the names of POIs should be exactly the same as the data in the sandbox.
+The `WorldEnv` class is a wrapper of the APIs. You can use it by instancing `WorldEnv` class and call the APIs with the command string. The command string is parsed as a restricted function-call expression: only registered API names, literal arguments, keyword arguments, and simple one-argument lambda predicates are accepted. All POI names should be exactly the same as the data in the sandbox.
 
 For example:
 
@@ -152,12 +152,18 @@ We also implement `__str__` method for `EnvOutput` to ensure the string won't be
 
 ## APIs
 
-We also provide orginal APIs for you to use. To use them, please `from chinatravel.environment.tools import *`
+We also provide orginal APIs for you to use. Import only the tool classes you need.
+
+Use the current official sandbox from
+[Hugging Face](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel-Sandbox).
+Legacy sandbox snapshots are unsupported: API filters and evaluator grounding
+compare entity names and concept labels exactly, without runtime alias rewriting.
 
 For example:
 
 ```python
-from chinatravel.environment.tools import *
+from chinatravel.environment.tools import Attractions
+
 attraction = Attractions()
 print(attraction.keys("上海"))
 ```

@@ -1,25 +1,14 @@
-import sys
 import os
+import sys
 import time
-import argparse
 import pandas as pd
 import json
 import numpy as np
-from datetime import datetime, timedelta
-import random
 import re
 import ast
 from geopy.distance import geodesic
 
-sys.path.append("./../../../")
-project_root_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-
-if project_root_path not in sys.path:
-    sys.path.insert(0, project_root_path)
-
-from chinatravel.agent.base import AbstractAgent, BaseAgent
+from chinatravel.agent.base import BaseAgent
 from chinatravel.agent.UrbanTrip.utils import (
     time_compare_if_earlier_equal,
     calc_cost_from_itinerary_wo_intercity,
@@ -45,7 +34,7 @@ from chinatravel.environment.tools.poi.apis import Poi
 from chinatravel.agent.nesy_verifier.verifier.commonsense_constraint_nl import collect_commonsense_constraints_error
 from chinatravel.agent.nesy_verifier.verifier.personal_constraint_nl import collect_personal_error
 
-from chinatravel.symbol_verification.concept_func import *
+from chinatravel.symbol_verification.concept_func import room_type, target_city
 from chinatravel.agent.nesy_agent.nl2sl_hybrid import nl2sl_reflect
 from copy import deepcopy
 
@@ -66,6 +55,18 @@ class UrbanTrip(BaseAgent):
 
         self.visited_attractions = set()
         self.visited_restaurants = set()
+
+    @staticmethod
+    def _flatten_index_labels(labels):
+        flat = []
+        for label in labels:
+            if isinstance(label, pd.Index):
+                flat.extend(label.tolist())
+            elif isinstance(label, (list, tuple, set)):
+                flat.extend(UrbanTrip._flatten_index_labels(label))
+            else:
+                flat.append(label)
+        return flat
 
     def run(self, query, prob_idx, oralce_translation=True):
         method_name = self.method + "_" + self.backbone_llm.name
@@ -1057,7 +1058,10 @@ class UrbanTrip(BaseAgent):
                             print(f"[Warning] must visit restaurant type:{missing_types} is not in candidates")
 
                     # 过滤掉已经访问过的
-                    candidate_res_list = candidate_res_list.drop(index=self.restaurants_visiting, errors="ignore")
+                    candidate_res_list = candidate_res_list.drop(
+                        index=self._flatten_index_labels(self.restaurants_visiting),
+                        errors="ignore",
+                    )
 
                     # 根据开放时间过滤
                     candidate_res_filtered = candidate_res_list[
@@ -1662,7 +1666,10 @@ class UrbanTrip(BaseAgent):
                             print(f"[Warning] must see attraction type:{missing_types} is not in attraction candidates")
 
                     # 过滤掉已经访问过的景点
-                    candidate_attr_list = candidate_attr_list.drop(index=self.attractions_visiting, errors="ignore")
+                    candidate_attr_list = candidate_attr_list.drop(
+                        index=self._flatten_index_labels(self.attractions_visiting),
+                        errors="ignore",
+                    )
 
                     # 根据开放时间过滤
                     candidate_attr_filtered = candidate_attr_list[
@@ -1708,7 +1715,7 @@ class UrbanTrip(BaseAgent):
                     must_candidates = pd.DataFrame()
                     if self.must_see_attraction is not None:
                         for must_name in self.must_see_attraction:
-                            if must_name in self.attractions_visiting:
+                            if must_name in self.attraction_names_visiting:
                                 continue
                             must_attr = attr_info[attr_info["name"] == must_name]
                             if not must_attr.empty:
@@ -2867,6 +2874,7 @@ class UrbanTrip(BaseAgent):
         return 90
 
     def extract_user_constraints_by_DSL(self, query):
+        import ast
         import re
 
         # 统一转成字符串，防止 None 或非字符串类型
@@ -2876,8 +2884,82 @@ class UrbanTrip(BaseAgent):
         elif not isinstance(dsl, str):
             dsl = str(dsl) if dsl is not None else ""
 
+        def normalize_extracted_strings(values):
+            normalized = []
+            for value in values:
+                if isinstance(value, tuple):
+                    value = next((item for item in value if item), "")
+                if value:
+                    normalized.append(str(value))
+            return normalized
+
         def extract_list(s):
-            return re.findall(r"[\"']([^\"']+)[\"']", s) or [s.strip()]
+            return normalize_extracted_strings(extract_list_raw(s))
+
+        def extract_list_raw(s):
+            text = str(s).strip()
+            if not text:
+                return []
+            for expr in (text, "{" + text + "}"):
+                try:
+                    value = ast.literal_eval(expr)
+                except (SyntaxError, ValueError):
+                    continue
+                if isinstance(value, str):
+                    return [value]
+                if isinstance(value, (set, list, tuple)):
+                    return [str(item) for item in value]
+            return re.findall(r'"((?:\\.|[^"\\])*)"|\'((?:\\.|[^\'\\])*)\'', text) or [text]
+
+        str_lit = r'(?P<quote>["\'])(?P<value>(?:\\.|(?!(?P=quote)).)*?)(?P=quote)'
+
+        def extract_position_time_constraints(dsl_str):
+            constraints = {}
+            block_pattern = re.compile(
+                r"activity_position\(activity\)\s*==\s*"
+                + str_lit
+                + r"(?P<body>.*?)(?=\n\s*if\s+activity_position\(activity\)|\Z)",
+                flags=re.S,
+            )
+            comparison_pattern = re.compile(
+                r"activity_(?P<field>start|end)_time\(activity\)\s*"
+                r"(?P<op>>=|<=|==)\s*"
+                + str_lit,
+                flags=re.S,
+            )
+            for block in block_pattern.finditer(dsl_str):
+                name = ast.literal_eval(block.group("quote") + block.group("value") + block.group("quote"))
+                entry = constraints.setdefault(name, {"arrive": None, "leave": None})
+                for match in comparison_pattern.finditer(block.group("body")):
+                    time_value = ast.literal_eval(
+                        match.group("quote") + match.group("value") + match.group("quote")
+                    )
+                    field = match.group("field")
+                    op = match.group("op")
+                    if field == "start":
+                        if op == "<=":
+                            entry["arrive"] = ["early", time_value]
+                        elif op in {">=", "=="}:
+                            entry["arrive"] = ["late", time_value]
+                    elif field == "end":
+                        if op == ">=":
+                            entry["leave"] = ["late", time_value]
+                        elif op in {"<=", "=="}:
+                            entry["leave"] = ["early", time_value]
+            return constraints
+
+        def extract_stay_time_constraints(dsl_str):
+            pattern = re.compile(
+                r"activity_position\(activity\)\s*==\s*"
+                + str_lit
+                + r".*?activity_time\(activity\)\s*>=\s*([0-9]+)",
+                flags=re.S,
+            )
+            constraints = {}
+            for match in pattern.finditer(dsl_str):
+                name = ast.literal_eval(match.group("quote") + match.group("value") + match.group("quote"))
+                constraints[name] = int(match.group(3))
+            return constraints or None
 
         def parse_single_dsl(dsl_str, query):
             """对单条 DSL 进行匹配"""
@@ -2912,23 +2994,20 @@ class UrbanTrip(BaseAgent):
                 res.pop("only_free_attractions", None)  # 如果不存在不会报错
 
             # activities time
-            matches = re.findall(
-                r"if\s+activity_position\(activity\)\s*==\s*'([^']+)'.*?activity_time\(activity\)\s*>=\s*([0-9]+)",
-                dsl_str, flags=re.S
-            )
-            res["activities_stay_time_dict"] = {name: int(time) for name, time in matches} if matches else None
-
-            matches = re.findall(
-                r"if\s+activity_position\(activity\)\s*==\s*'([^']+)'.*?activity_start_time\(activity\)\s*<=\s*'([^']+)'",
-                dsl_str, flags=re.S
-            )
-            res["activities_arrive_time_dict"] = {name: ["early", t] for name, t in matches} if matches else None
-
-            matches = re.findall(
-                r"if\s+activity_position\(activity\)\s*==\s*'([^']+)'.*?activity_end_time\(activity\)\s*>=\s*'([^']+)'",
-                dsl_str, flags=re.S
-            )
-            res["activities_leave_time_dict"] = {name: ["late", t] for name, t in matches} if matches else None
+            time_constraints = extract_position_time_constraints(dsl_str)
+            res["activities_stay_time_dict"] = extract_stay_time_constraints(dsl_str)
+            arrive_times = {
+                name: item["arrive"]
+                for name, item in time_constraints.items()
+                if item.get("arrive") is not None
+            }
+            leave_times = {
+                name: item["leave"]
+                for name, item in time_constraints.items()
+                if item.get("leave") is not None
+            }
+            res["activities_arrive_time_dict"] = arrive_times or None
+            res["activities_leave_time_dict"] = leave_times or None
 
             # restaurant
             patterns = {

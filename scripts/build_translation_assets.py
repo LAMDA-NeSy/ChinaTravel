@@ -13,14 +13,20 @@ from ast import literal_eval
 from pathlib import Path
 import traceback
 
+from openai_compatible_api import (
+    build_api_headers,
+    build_chat_completion_payload,
+    resolve_chat_completions_url,
+)
+
 try:
     from tqdm import tqdm
 except ImportError:
     tqdm = None
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-PROJECT_ROOT = PROJECT_ROOT.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_API_CONFIG = PROJECT_ROOT / "translation_api_config.json"
 CHINATRAVEL_ROOT = PROJECT_ROOT
 ZH_DB = CHINATRAVEL_ROOT / "chinatravel" / "environment" / "database"
 EN_DB = CHINATRAVEL_ROOT / "chinatravel" / "environment" / "database_en"
@@ -120,6 +126,26 @@ def read_csv_rows(path):
 def read_json(path):
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def load_translation_api_config(path):
+    path = Path(path).expanduser()
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    path = path.resolve()
+    config = read_json(path)
+    api = config.get("api")
+    translation = config.get("translation")
+    if not isinstance(api, dict) or not isinstance(translation, dict):
+        raise ValueError("API config must contain api and translation objects")
+    merged = dict(api)
+    merged.update(translation)
+    resolve_chat_completions_url(merged)
+    if not merged.get("model"):
+        raise ValueError("API config is missing 'model'")
+    if merged.get("api_key_required", True) and not merged.get("api_key_env"):
+        raise ValueError("API config is missing 'api_key_env'")
+    return path, merged
 
 
 def write_json(path, data):
@@ -347,13 +373,26 @@ def extract_string_literals(code):
 
 
 def translate_dsl_code(code, term_map):
-    translated = code
-    matched = []
-    for zh in sorted(term_map, key=len, reverse=True):
-        if zh in translated:
-            translated = translated.replace(zh, term_map[zh])
-            matched.append(zh)
-    translated = normalize_dsl_concept_literals(translated)
+    matched = [zh for zh in sorted(term_map, key=len, reverse=True) if zh in code]
+    tree = ast.parse(code)
+
+    class LiteralTranslator(ast.NodeTransformer):
+        def visit_Constant(self, node):
+            if not isinstance(node.value, str):
+                return node
+            translated_value = replace_terms(node.value, term_map)
+            translated_value = CONCEPT_LITERAL_ALIASES.get(
+                translated_value,
+                translated_value,
+            )
+            return ast.copy_location(
+                ast.Constant(value=translated_value, kind=node.kind),
+                node,
+            )
+
+    translated_tree = LiteralTranslator().visit(tree)
+    ast.fix_missing_locations(translated_tree)
+    translated = ast.unparse(translated_tree)
     unresolved = sorted({value for value in extract_string_literals(translated) if has_cjk(value)})
     return translated, matched, unresolved
 
@@ -407,7 +446,9 @@ def hf_records(splits, config_name):
     return records
 
 
-def translate_query_deepseek(uid, text, api_key, model, term_map, retries=3):
+def translate_query_openai_compatible(
+    uid, text, api_key, model, term_map, api_config
+):
     if not text:
         raise ValueError("text is empty")
     canonicalized_text = replace_terms(text, term_map)
@@ -418,31 +459,40 @@ def translate_query_deepseek(uid, text, api_key, model, term_map, retries=3):
         "Return only the translated query.\n\n"
         "Query:\n{}\n\nTranslation:".format(canonicalized_text)
     )
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": 512,
-        "thinking": {"type": "enabled"},
-    }
+    payload = build_chat_completion_payload(
+        api_config,
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        default_temperature=0.7,
+    )
     body = json.dumps(payload).encode("utf-8")
+    endpoint_url = resolve_chat_completions_url(api_config)
+    headers = build_api_headers(api_config, api_key)
+    retries = int(api_config.get("retries", 3))
+    timeout = float(api_config.get("timeout_seconds", 60))
+    accepted_finish_reasons = set(
+        api_config.get("accepted_finish_reasons", ["stop"])
+    )
     last_error = None
     for attempt in range(retries):
         try:
             request = urllib.request.Request(
-                "https://api.deepseek.com/chat/completions",
+                endpoint_url,
                 data=body,
-                headers={
-                    "Authorization": "Bearer {}".format(api_key),
-                    "Content-Type": "application/json",
-                },
+                headers=headers,
                 method="POST",
             )
-            with urllib.request.urlopen(request, timeout=60) as response:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
                 data = json.loads(response.read().decode("utf-8"))
-                res = data["choices"][0]["message"]["content"].strip()
+                choice = data["choices"][0]
+                finish_reason = choice.get("finish_reason")
+                if finish_reason not in accepted_finish_reasons:
+                    raise ValueError(
+                        "API returned finish_reason={!r}".format(finish_reason)
+                    )
+                res = choice["message"]["content"].strip()
                 if not res:
-                    raise ValueError("DeepSeek returned an empty translation")
+                    raise ValueError("API returned an empty translation")
                 return normalize_query_concept_terms(res)
         except (
             urllib.error.URLError,
@@ -456,18 +506,27 @@ def translate_query_deepseek(uid, text, api_key, model, term_map, retries=3):
             last_error = exc
             traceback.print_exc()
             if attempt == retries - 1:
-                raise RuntimeError("DeepSeek translation failed for {}: {}".format(uid, exc)) from exc
+                raise RuntimeError("Translation API failed for {}: {}".format(uid, exc)) from exc
             time.sleep(2 ** attempt)
-    raise RuntimeError("DeepSeek translation failed for {}: {}".format(uid, last_error)) from last_error
+    raise RuntimeError("Translation API failed for {}: {}".format(uid, last_error)) from last_error
 
 
-def translate_queries(records, args, term_map):
-    api_key = os.environ.get("DEEPSEEK_API_KEY")
-    if args.no_api or not api_key:
+def translate_queries(records, args, term_map, api_config):
+    if args.no_api:
+        return {}, [
+            {"uid": data.get("uid"), "reason": "API disabled"}
+            for _, data in records
+            if data.get("nature_language")
+        ]
+
+    api_key_env = api_config.get("api_key_env", "DEEPSEEK_API_KEY")
+    api_key = os.environ.get(api_key_env)
+    api_key_required = bool(api_config.get("api_key_required", True))
+    if api_key_required and not api_key:
         return {}, [
             {
                 "uid": data.get("uid"),
-                "reason": "DEEPSEEK_API_KEY not set" if not api_key else "API disabled",
+                "reason": "{} not set".format(api_key_env),
             }
             for _, data in records
             if data.get("nature_language")
@@ -479,12 +538,13 @@ def translate_queries(records, args, term_map):
     try:
         futures = {
             executor.submit(
-                translate_query_deepseek,
+                translate_query_openai_compatible,
                 data["uid"],
                 data.get("nature_language", ""),
                 api_key,
                 args.model,
                 term_map,
+                api_config,
             ): data
             for _, data in records
             if data.get("nature_language")
@@ -570,22 +630,45 @@ def build_translated_records(records, term_map, query_translations):
     return translated_records, unresolved, untranslated_query_uids
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Build Chinese-to-English DSL translation assets.")
     parser.add_argument("--source", choices=["local", "hf"], default="local", help="Source for Chinese query JSON records.")
     parser.add_argument("--input-data-dir", default="TPC_IJCAI_2026_phase1", help="Chinese query JSON root.")
     parser.add_argument("--hf-splits", default="easy,medium,human,preference_base50", help="Comma-separated HF splits when --source hf.")
     parser.add_argument("--hf-config", default="default", help="HF dataset config when --source hf.")
     parser.add_argument("--output-dir", default="translation_artifacts_phase1", help="Output artifact directory.")
-    parser.add_argument("--workers", type=int, default=32, help="Concurrent DeepSeek query translations.")
-    parser.add_argument("--model", default="deepseek-v4-flash", help="DeepSeek model name.")
+    parser.add_argument(
+        "--api-config",
+        default=str(DEFAULT_API_CONFIG),
+        help="JSON file containing non-secret OpenAI-compatible API settings.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=None,
+        help="Override concurrent translations from the API config.",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Override the Chat Completions model from the API config.",
+    )
     parser.add_argument("--no-api", action="store_true", help="Skip query translation API calls.")
     parser.add_argument(
         "--no-reuse-existing-translations",
         action="store_true",
         help="Ignore existing non-empty translated_nature_language.json entries.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.no_api:
+        api_config_path = None
+        api_config = {}
+    else:
+        api_config_path, api_config = load_translation_api_config(args.api_config)
+        args.model = args.model or api_config["model"]
+        args.workers = args.workers or int(api_config.get("workers", 32))
+        api_config["model"] = args.model
+        api_config["workers"] = args.workers
 
     output_dir = PROJECT_ROOT / args.output_dir
     dictionary = build_dictionary()
@@ -605,7 +688,9 @@ def main():
         for path, data in records
         if data.get("nature_language") and data.get("uid") not in existing_translations
     ]
-    new_query_translations, query_failures = translate_queries(pending_records, args, dictionary.term_map)
+    new_query_translations, query_failures = translate_queries(
+        pending_records, args, dictionary.term_map, api_config
+    )
     query_translations = dict(existing_translations)
     query_translations.update(new_query_translations)
     translated_records, unresolved, untranslated_query_uids = build_translated_records(records, dictionary.term_map, query_translations)
@@ -622,6 +707,18 @@ def main():
     write_json(output_dir / "query_translation_failures.json", query_failures)
     write_json(output_dir / "untranslated_query_uids.json", untranslated_query_uids)
     write_json(output_dir / "unresolved_hard_logic_literals.json", unresolved)
+    translation_api_summary = {"enabled": False}
+    if not args.no_api:
+        translation_api_summary = {
+            "enabled": True,
+            "model": args.model,
+            "workers": args.workers,
+            "endpoint": resolve_chat_completions_url(api_config),
+            "temperature": api_config.get("temperature"),
+            "max_tokens": api_config.get("max_tokens"),
+            "max_tokens_field": api_config.get("max_tokens_field", "max_tokens"),
+            "extra_body": api_config.get("extra_body", {}),
+        }
     write_json(
         output_dir / "summary.json",
         {
@@ -637,10 +734,18 @@ def main():
             "query_translation_failures": len(query_failures),
             "untranslated_queries": len(untranslated_query_uids),
             "unresolved_hard_logic_entries": len(unresolved),
+            "api_config": (
+                display_path(api_config_path) if api_config_path is not None else None
+            ),
+            "translation_api": translation_api_summary,
         },
     )
 
     print("Wrote translation assets to {}".format(display_path(output_dir)))
+    if api_config_path is None:
+        print("API config: disabled (--no-api)")
+    else:
+        print("API config: {}".format(display_path(api_config_path)))
     print("Dictionary terms: {}".format(len(dictionary.term_map)))
     print("Source records: {}".format(len(records)))
     print("Reused existing translations: {}".format(len(existing_translations)))

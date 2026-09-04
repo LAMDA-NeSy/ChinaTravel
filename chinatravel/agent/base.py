@@ -1,13 +1,9 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import json
+import os
 from json import JSONDecodeError
 
 from abc import ABC, abstractmethod
-from agent.utils import decode_numpy_dict
+from .utils import decode_numpy_dict
 
 
 def is_jsonable(x):
@@ -114,7 +110,7 @@ class AbstractAgent(ABC):
 
 import time
 
-from agent.load_model import init_llm
+from .load_model import init_llm
 
 class BaseAgent:
     def __init__(self, name, **kwargs):
@@ -151,4 +147,3 @@ class BaseAgent:
     def reset(self):
         """Reset the agent."""
         raise NotImplementedError
-
