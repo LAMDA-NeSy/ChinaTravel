@@ -55,8 +55,6 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
   以及发布校验和；
 - 使用仓库相对且已被 Git 忽略的 `artifacts/` 目录，便于在不同环境中运行本地流程。
 
-比赛专用的生成数据和私有测试 split 另行分发。仓库不包含 API 密钥或本地模型输出。
-
 ### 2025.09
 
 - 发布 TPC@IJCAI 2025 DSL 赛道冠军方案。感谢
@@ -94,6 +92,16 @@ TPC@IJCAI 2026 期间及赛后完善的基准、测评器、双语环境和数�
 魔搭仓库镜像官方 Hugging Face Query 与沙盒数据。两个 Query 仓库均提供 Phase 1
 splits，以及完整的 2,000 条 `TPC2026_phase2` 数据和其中 100 条
 `competition_test` split。
+
+### TPC@IJCAI 2026 比赛 Query
+
+- [Phase 1 正式测试 Query（1,000 条）](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel/viewer/test/human1000)
+- [Phase 2 完整公开数据（2,000 条）](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel/viewer/TPC2026_phase2/full)
+- [Phase 2 正式测评子集（100 条）](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel/viewer/TPC2026_phase2/competition_test)
+
+Phase 1 链接提供比赛期间选手可见的 Query；仅供测评器使用的 Oracle 标注不属于该
+公开 split。同一批公开 Query 也可以从
+[魔搭镜像](https://modelscope.cn/datasets/Cbphcr/ChinaTravel)获取。
 
 ## 🗂️ 目录结构
 
