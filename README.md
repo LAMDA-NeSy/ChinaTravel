@@ -64,10 +64,6 @@ tooling developed during and after TPC@IJCAI 2026:
 - repository-relative, Git-ignored `artifacts/` outputs for portable local
   workflows.
 
-Competition-only generated datasets and private test splits are distributed
-separately. API credentials and local model outputs are not included in the
-repository.
-
 ### 2025.09
 
 - Published the champion solution of the TPC@IJCAI 2025 DSL track. We thank
@@ -109,6 +105,17 @@ The ModelScope repositories mirror the official Hugging Face query and sandbox
 releases. Both query repositories provide the Phase 1 splits and the complete
 2,000-query `TPC2026_phase2` config, including its 100-query `competition_test`
 split.
+
+### TPC@IJCAI 2026 Query Sets
+
+- [Phase 1 competition test queries (1,000)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel/viewer/test/human1000)
+- [Phase 2 complete release (2,000)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel/viewer/TPC2026_phase2/full)
+- [Phase 2 official evaluation subset (100)](https://huggingface.co/datasets/LAMDA-NeSy/ChinaTravel/viewer/TPC2026_phase2/competition_test)
+
+The Phase 1 link contains the participant-facing query set. Evaluator-only
+Oracle annotations are not part of that public split. The same public query
+release is also available from the
+[ModelScope mirror](https://modelscope.cn/datasets/Cbphcr/ChinaTravel).
 
 ## 🗂️ Repository Map
 
