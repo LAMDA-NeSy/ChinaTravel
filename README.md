@@ -401,9 +401,9 @@ sandbox release on Hugging Face.
 ## 📄 License
 
 The code and documentation in this repository are licensed under the
-[MIT License](LICENSE). Separately distributed datasets are governed by the
-licenses stated in their dataset cards. Third-party components retain their
-respective licenses.
+[MIT License](LICENSE). The official query and sandbox datasets are licensed
+under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Third-party components retain their respective licenses.
 
 ## ✉️ Contact
 

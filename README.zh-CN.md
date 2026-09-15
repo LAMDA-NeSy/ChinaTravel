@@ -365,8 +365,8 @@ fabiundstefan，包括 [Fabian Missbrenner](https://github.com/fabufab)，以负
 
 ## 📄 许可证
 
-本仓库的代码和文档采用 [MIT 许可证](LICENSE)。单独发布的数据集遵循其数据卡中
-声明的许可证，第三方组件保留各自的许可证。
+本仓库的代码和文档采用 [MIT 许可证](LICENSE)。官方 Query 和沙盒数据集采用
+[CC BY 4.0 许可证](https://creativecommons.org/licenses/by/4.0/)，第三方组件保留各自的许可证。
 
 ## ✉️ 联系方式
 

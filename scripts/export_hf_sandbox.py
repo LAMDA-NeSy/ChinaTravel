@@ -345,7 +345,7 @@ def dataset_card(version: str, counts: dict[str, dict[str, int]]) -> str:
         for table in TABLE_NAMES
     )
     return f"""---
-license: cc-by-nc-sa-4.0
+license: cc-by-4.0
 language:
 - zh
 - en
@@ -358,6 +358,8 @@ configs:
 ---
 
 # ChinaTravel Sandbox Environment Database
+
+This dataset is licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 
 [English](#english) | [简体中文](#简体中文)
 
