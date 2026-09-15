@@ -398,6 +398,13 @@ evaluation, prompts, setup, and documentation. We are additionally grateful to
 and to [Niels Rogge](https://github.com/NielsRogge) for encouraging the public
 sandbox release on Hugging Face.
 
+## 📄 License
+
+The code and documentation in this repository are licensed under the
+[MIT License](LICENSE). Separately distributed datasets are governed by the
+licenses stated in their dataset cards. Third-party components retain their
+respective licenses.
+
 ## ✉️ Contact
 
 For questions, contact [Jie-Jing Shao](mailto:shaojj@lamda.nju.edu.cn),

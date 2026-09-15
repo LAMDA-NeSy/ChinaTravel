@@ -363,6 +363,11 @@ fabiundstefan，包括 [Fabian Missbrenner](https://github.com/fabufab)，以负
 [@lucmek](https://huggingface.co/lucmek) 协助修正 Hugging Face Query 数据，并感谢
 [Niels Rogge](https://github.com/NielsRogge) 建议在 Hugging Face 公开发布沙盒数据。
 
+## 📄 许可证
+
+本仓库的代码和文档采用 [MIT 许可证](LICENSE)。单独发布的数据集遵循其数据卡中
+声明的许可证，第三方组件保留各自的许可证。
+
 ## ✉️ 联系方式
 
 如有问题，请联系 [Jie-Jing Shao](mailto:shaojj@lamda.nju.edu.cn)、
